@@ -15,6 +15,5 @@ def update_statement(clients_statement, client_login, operation, value):
 		next_id = max(ids) + 1
 	else:
 		next_id = 0
-			
 	new_op_id = f"operation_{next_id}"
 	operations[new_op_id] = {"Operation": operation, "Value": value}
