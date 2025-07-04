@@ -1,76 +1,9 @@
+from libs.BBS_utils import make_deposit, withdrawal, update_statement
+from libs.color import RED, GREEN, YLOW, PINK, CYAN, INVERT, BOLD, DEFAULT
+from libs.utils import clear, is_valid_number, press_enter, is_negative_number
+
 import os
 import time as tm
-import sys
-if os.name == 'nt':
-	import msvcrt
-else:
-	import termios
-	import tty
-
-DEFAULT = '\033[m'
-RED = '\033[1;31m'
-GREEN = '\033[1;32m'
-YLOW = '\033[1;33m'
-PINK = '\033[1;35m'
-CYAN = '\033[1;36m'
-INVERT = '\033[1;4;7;97m'
-BOLD = '\033[1m'
-
-class BankSystem:
-	@staticmethod
-	def deposit(cur_value, new_value):
-		after_deposit = float(cur_value) + float(new_value)
-		return float(after_deposit)
-
-	@staticmethod
-	def withdrawal(cur_value, value_taken):
-		after_withdrawal = float(cur_value) - float(value_taken)
-		return float(after_withdrawal)
-
-	@staticmethod
-	def update_statement(clients_statement, client_login, operation, value):
-		if client_login not in clients_statement:
-			clients_statement[client_login] = {}
-		operations = clients_statement[client_login]
-		if operations:
-			ids = [int(op.split("_")[1]) for op in operations.keys()]
-			next_id = max(ids) + 1
-		else:
-			next_id = 0
-		
-		new_op_id = f"operation_{next_id}"
-		operations[new_op_id] = {"Operation": operation, "Value": value}
-
-def clear():
-	os.system('cls' if os.name == 'nt' else 'clear')
-
-def is_valid_number(value):
-	try:
-		float(value)
-		return True
-	except ValueError:
-		return False
-
-def press_enter():
-	if os.name == 'nt':
-		while True:
-			if msvcrt.kbhit():
-				key = msvcrt.getch()
-				if key == b'\r':
-					break
-			tm.sleep(0.01)
-	else:
-		fd = sys.stdin.fileno()
-		old_settings = termios.tcgetattr(fd)
-		try:
-			tty.setraw(fd)
-			while True:
-				ch = sys.stdin.read(1)
-				if ch == '\r' or ch == '\n':
-					break
-		finally:
-			termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-
 
 bank_client = {
 	"vinny": {"name": "Vinicius Eduardo", "balance": 0}
@@ -99,6 +32,7 @@ def main():
 			# print(YLOW, f"DEBUG: operation chosen: {operation}", DEFAULT)
 			if operation.isnumeric():
 				if int(operation) == 4:
+					clear()
 					print("See you soon!")
 					exit_stt = "true"
 					pass
@@ -108,10 +42,12 @@ def main():
 				elif int(operation) == 1:
 					clear()
 					deposit = input("Type a value to deposit: ")
-					if is_valid_number(deposit):
-						bank_client[login]['balance'] = BankSystem.deposit(bank_client[login]['balance'], deposit)
+					if is_negative_number(deposit):
+							print(RED, f"{RED}Error:{DEFAULT} negative number is not allowed, just type a number without signal", DEFAULT)
+					elif is_valid_number(deposit):
+						bank_client[login]['balance'] = make_deposit(bank_client[login]['balance'], deposit)
 						print(f"Your current balance is: {CYAN}R$ {bank_client[login]['balance']}{DEFAULT}")
-						BankSystem.update_statement(clients_statement=clients_statement, client_login=login, operation="Deposit: +", value=deposit)
+						update_statement(clients_statement=clients_statement, client_login=login, operation="Deposit: +", value=deposit)
 					else:
 						print(RED, f"Error: {PINK}{deposit}{RED} is not a valid number", DEFAULT)
 				elif int(operation) == 2:
@@ -120,13 +56,15 @@ def main():
 						print(PINK, "Sorry, you cannot make more withdrawals today!", DEFAULT)
 					else:
 						withdrawal_value = input("Type a value to withdrawal: ")
-						if is_valid_number(withdrawal_value):
+						if is_negative_number(withdrawal_value):
+							print(RED, f"{RED}Error:{DEFAULT} negative number is not allowed, just type a number without signal", DEFAULT)
+						elif is_valid_number(withdrawal_value):
 							if float(withdrawal_value) >= float(bank_client[login]['balance']):
 								print(RED, f"You cannot withdrawal a value bigger than R${float(bank_client[login]['balance'])}!", DEFAULT)
 							else:
-								bank_client[login]['balance'] = BankSystem.withdrawal(bank_client[login]['balance'], withdrawal_value)
+								bank_client[login]['balance'] = withdrawal(bank_client[login]['balance'], withdrawal_value)
 								print(f"Your current balance is: {CYAN}R$ {bank_client[login]['balance']}{DEFAULT}")
-								BankSystem.update_statement(clients_statement=clients_statement, client_login=login, operation="Withdrawal: -", value=withdrawal_value)
+								update_statement(clients_statement=clients_statement, client_login=login, operation="Withdrawal: -", value=withdrawal_value)
 								nbr_withdrawal += 1
 								if nbr_withdrawal == 2:
 									print(YLOW, "You can now make one more withdrawal!", DEFAULT)

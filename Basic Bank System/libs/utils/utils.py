@@ -36,3 +36,9 @@ def press_enter():
 					break
 		finally:
 			termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+
+def is_negative_number(value):
+	try:
+		return float(value) < 0
+	except ValueError:
+		return False
