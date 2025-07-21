@@ -1,1 +1,1 @@
-from .BBS_utils import make_deposit, withdrawal, update_statement
+from .BBS_utils import make_deposit, withdrawal, update_statement, is_cpf_registered, new_user

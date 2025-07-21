@@ -42,3 +42,6 @@ def is_negative_number(value):
 		return float(value) < 0
 	except ValueError:
 		return False
+
+def update_dict(dict_name, *data):
+	pass
