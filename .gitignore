@@ -1,0 +1,25 @@
+# Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# temp files
+*.log
+*.tmp
+*.swp
+
+# virtual env
+venv/
+.env/
+.env.bak/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+
+# Testers file
+.coverage
+htmlcov/
+.tox/
+.pytest_cache/

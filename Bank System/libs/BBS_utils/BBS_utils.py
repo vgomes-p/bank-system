@@ -1,3 +1,9 @@
+from libs.color import RED, GREEN, YLOW, PINK, CYAN, INVERT, BOLD, DEFAULT
+from libs.utils import clear, is_valid_number, press_enter, is_negative_number, update_dict
+
+import os
+import time as tm
+
 def make_deposit(cur_value, new_value):
 	after_deposit = float(cur_value) + float(new_value)
 	return float(after_deposit)
@@ -6,8 +12,8 @@ def withdrawal(cur_value, value_taken):
 	after_withdrawal = float(cur_value) - float(value_taken)
 	return float(after_withdrawal)
 
-def update_statement(bank_list, agency, login, operation, value):
-	statement = bank_list[agency][login].setdefault("statement", {})
+def update_statement(bank_list, login, operation, value):
+	statement = bank_list["client"][login].setdefault("statement", {})
 	if statement:
 		ids = [int(op.split("_")[1]) for op in statement.keys()]
 		next_id = max(ids) + 1
@@ -16,11 +22,150 @@ def update_statement(bank_list, agency, login, operation, value):
 	op_id = f"operation_{next_id}"
 	statement[op_id] = {"Operation": operation, "Value": value}
 
+def handle_deposit(balance: float, login: str, bank_list: dict) -> float:
+	deposit = input("Type a value to deposit: ").strip()
+	if is_negative_number(deposit):
+		print(RED, f"{RED}Error:{DEFAULT} negative number is not allowed, just type a number without signal", DEFAULT)
+	elif is_valid_number(deposit):
+		balance = make_deposit(balance, deposit)
+		print(f"Your current balance is: {CYAN}R$ {balance}{DEFAULT}")
+		update_statement(bank_list=bank_list, login=login, operation="Deposit: +", value=deposit)
+	else:
+		print(RED, f"Error: {PINK}{deposit}{RED} is not a valid number", DEFAULT)
+	return balance
 
-def new_user(name, cpf, street='none', house_nbr='none', neighborhood='none', city='none', state='none'): #to-do
-	pass
+def handle_withdrawal(balance: float, login: str, bank_list: dict, nbr_withdrawal: int) -> tuple[float, int]:
+	if nbr_withdrawal == 3:
+		print(PINK, "Sorry, you cannot make more withdrawals today!", DEFAULT)
+		return balance, nbr_withdrawal
+	withdrawal_value = input("Type a value to withdrawal: ")
+	if is_negative_number(withdrawal_value):
+		print(RED, f"{RED}Error:{DEFAULT} negative number is not allowed, just type a number without signal", DEFAULT)
+	elif is_valid_number(withdrawal_value):
+		if float(withdrawal_value) >= balance:
+			print(RED, f"You cannot withdrawal a value equal or bigger than R${balance}!", DEFAULT)
+		else:
+			balance = withdrawal(cur_value=balance, value_taken=withdrawal_value)
+			print(f"Your current balance is: {CYAN}R${balance}{DEFAULT}")
+			update_statement(bank_list=bank_list, login=login, operation="Withdrawal: -", value=withdrawal_value)
+			nbr_withdrawal += 1
+			if nbr_withdrawal == 2:
+				print(YLOW, "You can now make one more withdrawal!", DEFAULT)
+			elif nbr_withdrawal == 3:
+				print(RED, "This was your LAST withdrawal for today!", DEFAULT)
+	else:
+		print(RED, f"Error: {PINK}{withdrawal_value}{RED} is not a valid number", DEFAULT)
+	return balance, nbr_withdrawal
 
+def display_statement(login: str, statement: dict, balance: float):
+	print(f"Your bank statement is as following:\n{PINK}Operation: Value{DEFAULT}")
+	for op_data in statement.values():
+		op, val = op_data["Operation"], op_data["Value"]
+		if op:
+			print(f"{op}R${val}")
+	print(f"\nYour current balance is: {CYAN}{balance}{DEFAULT}!")
 
+def account_exits(agency: str, login: str, account: str, cpf_nbr: str, bank_list: dict) -> tuple[bool, str]:
+	if bank_list.get("agency") != agency:
+		return False, f"Agency '{agency}' not found!"
+	if login not in bank_list.get("client", {}):
+		return False, f"Client for the login '{login}' not found!"
+	client_data = bank_list["client"][login]
+	client_name = client_data.get("name")
+	# account_ret, cpf_ret = client_data.get("account"), client_data.get("cpf")
+	# print(YLOW, f"DEBUG:\nclient_data return: {client_data}\nclient_name return: {client_name}\naccount return: {account_ret}\ncpf return: {cpf_ret}", DEFAULT)
+	if account != client_data.get("account"):
+		return False, f"The account '{account}' does not belong to {client_name}"
+	if cpf_nbr != client_data.get("cpf"):
+		return False, f"Invalid CPF for {client_name}'s account!"
+	return True, client_name
 
-def is_cpf_registered(registered_cpfs, new_user_cpf): #to-do
-	pass
+def get_credentials() -> tuple[str, str, str, str]:
+	print("Please, enter your access informations:")
+	# agency, login, account, cpf_nbr = "0001", "vinny", "1", "12345678900" #for debug
+	agency = input("Agency: ")
+	login = input("Access login: ").lower()
+	account = input("Account number: ")
+	cpf_nbr = input("CPF number: ").lower().replace(".", "").replace("-", "")
+	return str(agency), str(login), str(account), str(cpf_nbr)
+
+def mk_login(name: str, cpf: str, state: str) -> str:
+	if not (name and cpf and state):
+		return ""
+	if len(cpf) != "11" or not cpf.isdigit():
+		return ""
+	if len(state) != 2 or not state.isalpha():
+		return ""
+	init, mid, end  = name[:2].lower(), cpf[5:7], state[0:].lower
+	return f"{init}{mid}-{end}"
+
+def get_new_user_credentials() -> tuple[bool, str, str, str, str, str, str, str, str]:
+	print("Please, enter the following informations to create your account!")
+	while True:
+		name = input("Name: ").strip()
+		cpf = input("CPF number: ").lower().replace(".", "").replace("-", "")
+		street = input("Street: ").strip()
+		house_nbr = input("House Number: ").strip()
+		neighborhood = input("Neighborhood: ").strip()
+		city = input("City: ").strip()
+		state = input("State [eg.: SP, MG]: ").strip().upper()
+		if not all([name, cpf, street, house_nbr, neighborhood, city, state]):
+			print(f"{RED}No item can be empty!{DEFAULT}\nPlease, enter the following information correctly!")
+			continue
+		if len(cpf) != 11 or not cpf.isdigit():
+			print(f"{RED}CPF can only contains 11 numbers!{DEFAULT}\nPlease, enter the following information correctly!")
+			continue
+		login = mk_login(name=name, cpf=cpf, state=state)
+		error_nbr = 0
+		if login:
+			return True, name, cpf, street, house_nbr, neighborhood, city, state, login
+		else:
+			error_nbr += 1
+			if error_nbr >= 3:
+				print(f"{YLOW}Please, contact the support to create your account!{DEFAULT}")
+				exit
+			print(f"{RED}Login could not be created. Please, try again!{DEFAULT}")
+			continue
+	return False, f"Error to create login", "", "", "", "", "", "", "", ""
+
+def is_cpf_registered(bank_list: dict, user_cpf: str) -> tuple[bool, str]:
+	for client in bank_list.get("client", {}).value():
+		if client.get("cpf") == user_cpf:
+			return True, ""
+	return False, f"CPF {user_cpf} not registered!"
+
+def is_login_registered(bank_list: dict, login: str) -> tuple[bool, str]:
+	if login in bank_list.get("client", {}):
+		return True, f"Login {login} already registered!"
+	return False, f"Login {login} not registered!"
+
+def registered_new_user(bank_list: dict, name: str, cpf: str, street='none', house_nbr='none', neighborhood='none', city='none', state='none', login='') -> tuple[bool, str]:
+	is_cpf_reg, cpf_ret = is_cpf_registered(bank_list=bank_list, user_cpf=cpf)
+	if is_cpf_reg:
+		return False, f"CPF {cpf} is already registered!"
+	
+	is_login_reg, login_ret = is_login_registered(bank_list=bank_list, login=login)
+	if is_login_reg:
+		return False, login_ret
+	
+	clients = bank_list.get("client", {})
+	if clients:
+		account_numbers = [int(client["account"]) for client in clients.values() if client.get("account").isdigit()]
+		next_account = str(max(account_numbers) + 1) if account_numbers else "1"
+	else:
+		next_account = "1"
+	bank_list.setdefault("client", {})[login] = {
+		"account": next_account,
+		"name": name,
+		"cpf": cpf,
+		"balance": 0,
+		"statement": {"operation_0": {"Operation": "", "Value": ""}},
+		"Address": {
+			"street": street,
+			"house_nbr": house_nbr,
+			"neighborhood": neighborhood,
+			"city": city,
+			"state": state
+		}
+	}
+	return True, f"User {name} registered successfully with login '{login}' and account {next_account}"

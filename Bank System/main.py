@@ -1,4 +1,6 @@
-from libs.BBS_utils import make_deposit, withdrawal, update_statement, is_cpf_registered, new_user
+#!/usr/bin/env python3
+
+from libs.BBS_utils import make_deposit, withdrawal, update_statement, is_cpf_registered, is_login_registered, registered_new_user, handle_withdrawal, handle_deposit, display_statement, account_exits, get_credentials, get_new_user_credentials
 from libs.color import RED, GREEN, YLOW, PINK, CYAN, INVERT, BOLD, DEFAULT
 from libs.utils import clear, is_valid_number, press_enter, is_negative_number, update_dict
 
@@ -17,49 +19,6 @@ valid_operations = {
 	"4": "exit",
 }
 
-def handle_deposit(balance: float, login: str, statement: dict) -> float:
-	deposit = input("Type a value to deposit: ").strip()
-	if is_negative_number(deposit):
-		print(RED, f"{RED}Error:{DEFAULT} negative number is not allowed, just type a number without signal", DEFAULT)
-	elif is_valid_number(deposit):
-		balance = make_deposit(balance, deposit)
-		print(f"Your current balance is: {CYAN}R$ {balance}{DEFAULT}")
-		update_statement(clients_statement=statement, client_login=login, operation="Deposit: +", value=deposit)
-	else:
-		print(RED, f"Error: {PINK}{deposit}{RED} is not a valid number", DEFAULT)
-	return balance
-
-def handle_withdrawal(balance: dict, login: str, statement: dict, nbr_withdrawal: int) -> tuple[float, int]:
-	if nbr_withdrawal == 3:
-		print(PINK, "Sorry, you cannot make more withdrawals today!", DEFAULT)
-		return balance, nbr_withdrawal
-	withdrawal_value = input("Type a value to withdrawal: ")
-	if is_negative_number(withdrawal_value):
-		print(RED, f"{RED}Error:{DEFAULT} negative number is not allowed, just type a number without signal", DEFAULT)
-	elif is_valid_number(withdrawal_value):
-		if float(withdrawal_value) >= balance:
-			print(RED, f"You cannot withdrawal a value equal or bigger than R${balance}!", DEFAULT)
-		else:
-			balance = withdrawal(cur_value=balance, value_taken=withdrawal_value)
-			print(f"Your current balance is: {CYAN}R${balance}{DEFAULT}")
-			update_statement(clients_statement=statement, client_login=login, operation="Withdrawal: -", value=withdrawal_value)
-			nbr_withdrawal += 1
-			if nbr_withdrawal == 2:
-				print(YLOW, "You can now make one more withdrawal!", DEFAULT)
-			elif nbr_withdrawal == 3:
-				print(RED, "This was your LAST withdrawal for today!", DEFAULT)
-	else:
-		print(RED, f"Error: {PINK}{withdrawal_value}{RED} is not a valid number", DEFAULT)
-	return balance, nbr_withdrawal
-
-def display_statement(login: str, statement: dict, balance: float):
-	print(f"Your bank statement is as following:\n{PINK}Operation: Value{DEFAULT}")
-	for op_data in statement.get(login, {}).values():
-		op, val = op_data["Operation"], op_data["Value"]
-		if op:
-			print(f"{op}R${val}")
-	print(f"\nYour current balance is: {CYAN}{balance}{DEFAULT}!")
-
 def pick_operation() -> str:
 	print("Which operation do you want to make?")
 	print("0: Check balance")
@@ -69,14 +28,14 @@ def pick_operation() -> str:
 	print("4: Exit account")
 	return input("Type an option:\n>>> ").strip()
 
-def run_system(bank_list: dict, agency: str, login: str, statement: dict):
-	user_data = bank_list[agency][login]
+def run_system(bank_list: dict, login: str, statement: dict):
+	user_data = bank_list["client"][login]
 	times_called = 0
 	while True:
 		print("\nPress 'ENTER' to continue")
 		press_enter()
 		clear()
-		operation = input("Type a option: ")
+		operation = pick_operation()
 		if operation not in valid_operations:
 			print(RED, "Invalid option. Try again!", DEFAULT)
 			continue
@@ -86,37 +45,16 @@ def run_system(bank_list: dict, agency: str, login: str, statement: dict):
 			break
 		elif operation == "0":
 			clear()
-			print(f"Your current balance is: {CYAN}R${float(bank_client[login]['balance'])}{DEFAULT}")
+			print(f"Your current balance is: {CYAN}R${float(user_data['balance'])}{DEFAULT}")
 		elif operation == "1":
 			clear()
-			user_data["balance"] = handle_deposit(user_data["balance"], login, clients_statement)
+			user_data["balance"] = handle_deposit(balance=user_data["balance"], login=login, bank_list=bank_list)
 		elif operation == "2":
 			clear()
-			user_data["balance"], times_called = handle_withdrawal(user_data["balance"], login, statement, times_called)
+			user_data["balance"], times_called = handle_withdrawal(balance=user_data["balance"], login=login, bank_list=bank_list, nbr_withdrawal=times_called)
 		elif operation == "3":
 			clear()
-			display_statement(login, statement, user_data["balance"])
-
-def account_exits(agency: str, login: str, account: str, cpf_nbr: str, bank_list: dict) -> tuple[bool, str]:
-	if agency not in bank_list:
-		return False, f"Agency '{agency}' not found!"
-	if login not in bank_list[agency]:
-		return False, f"Client for the login '{login}' not found!"
-	client_data = bank_list[agency][login]
-	client_name = client_data['name']
-	if account != client_data["account"]:
-		return False, f"The account '{account}' does not belong to {client_name}"
-	if cpf_nbr != client_data["cpf"]:
-		return False, f"Invalid CPF for {client_name}'s account!"
-	return True, client_name
-
-def get_credentials() -> tuple[str, str, str, str]:
-	print("Please, enter your access informations:")
-	agency = input("Agency: ").lower().strip()
-	login = input("Access login: ").lower().strip()
-	account = input("Account number: ").lower().strip()
-	cpf_nbr = input("CPF number: ").lower().strip().replace(".", "").replace("-", "")
-	return agency, login, account, cpf_nbr
+			display_statement(login=login, statement=statement, balance=user_data["balance"])
 
 def main():
 	print(GREEN, "Welcome to the bank system", DEFAULT)
@@ -128,9 +66,26 @@ def main():
 	if is_valid:
 		print(f"Welcome, {CYAN}{ret}{DEFAULT}!")
 		tm.sleep(2)
-		statement = bank_list[agency][login]["statement"]
-		run_system(bank_list, agency, login, statement)
+		statement = bank_list["client"][login]["statement"]
+		run_system(bank_list=bank_list, login=login, statement=statement)
 	else:
 		print(RED, ret, DEFAULT)
+		print(YLOW, "Would you like to create a new account?", DEFAULT)
+		if input("Type 'yes' to create a new account, or any key to exit: ").strip().lower() == "yes":
+			success, name, cpf, street, house_nbr, neighborhood, city, state, new_login = get_new_user_credentials()
+			if success:
+				reg_success, reg_msg = registered_new_user(bank_list=bank_list, name=name, cpf=cpf, street=street, house_nbr=house_nbr, neighborhood=neighborhood, city=city, state=state, login=new_login)
+				clear()
+				print(GREEN if reg_success else RED, reg_msg, DEFAULT)
+				if reg_success:
+					tm.sleep(2)
+					nw_statement = bank_list["client"][new_login]["statement"]
+					run_system(bank_list=bank_list, login=new_login, statement=nw_statement)
+			else:
+				print(RED, name, DEFAULT)
+		else:
+			print(GREEN, "Goodbye!", DEFAULT)
+	tm.sleep(2)
+	clear()
 
 main()
