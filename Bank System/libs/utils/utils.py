@@ -1,5 +1,5 @@
 import os
-import time as tm
+import time
 import sys
 if os.name == 'nt':
 	import msvcrt
@@ -7,8 +7,10 @@ else:
 	import termios
 	import tty
 
-def clear():
+def clear(init_wait_time=0, final_wait_time=0):
+	time.sleep(float(init_wait_time))
 	os.system('cls' if os.name == 'nt' else 'clear')
+	time.sleep(float(final_wait_time))
 
 def is_valid_number(value):
 	try:
@@ -24,7 +26,7 @@ def press_enter():
 				key = msvcrt.getch()
 				if key == b'\r':
 					break
-			tm.sleep(0.01)
+			time.sleep(0.01)
 	else:
 		fd = sys.stdin.fileno()
 		old_settings = termios.tcgetattr(fd)
@@ -42,6 +44,3 @@ def is_negative_number(value):
 		return float(value) < 0
 	except ValueError:
 		return False
-
-def update_dict(dict_name, *data):
-	pass
