@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-from libs.BBS_utils import make_deposit, withdrawal, update_statement, is_cpf_registered, is_login_registered, registered_new_user, handle_withdrawal, handle_deposit, display_statement, account_exits, get_credentials, get_new_user_credentials
+from libs.bank_system_utils import make_deposit, withdrawal, update_statement, is_cpf_registered, is_login_registered, registered_new_user, handle_withdrawal, handle_deposit, display_statement, account_exits, get_credentials, get_new_user_credentials
 from libs.color import RED, GREEN, YLOW, PINK, CYAN, INVERT, BOLD, DEFAULT
 from libs.utils import clear, is_valid_number, press_enter, is_negative_number
 import time as tm
 
 bank_list = {
-	"agency": "0001", "client": {"vinny": {"account": "1", "name": "Vinicius Eduardo", "cpf": "12345678900", "balance": 0, "statement": {"operation_0": {"Operation": "", "Value": ""}}}}
+	"agency": "0001", "client": {"vinny": {"account": "1", "pin": "access777", "name": "Vinicius Eduardo", "cpf": "12345678900", "balance": 0, "statement": {"operation_0": {"Operation": "", "Value": ""}}}}
 }
 
 valid_operations = {
@@ -61,7 +61,7 @@ def run_system(bank_list: dict, login: str, statement: dict) -> int:
 			user_data["balance"], times_called = handle_withdrawal(balance=user_data["balance"], login=login, bank_list=bank_list, nbr_withdrawal=times_called)
 		elif operation == "3":
 			clear(0, 0)
-			display_statement(login=login, statement=statement, balance=user_data["balance"])
+			display_statement(statement=statement, balance=user_data["balance"])
 
 def main():
 	print(GREEN, "Welcome to the bank system", DEFAULT)
@@ -77,6 +77,13 @@ def main():
 			tm.sleep(1)
 			statement = bank_list["client"][login]["statement"]
 			sigfinish = run_system(bank_list=bank_list, login=login, statement=statement)
+		elif is_valid == 2:
+			clear(init_wait_time=2, final_wait_time=0)
+			print("Restarting system...")
+			tm.sleep(1)
+			print("Please, wait!")
+			clear(init_wait_time=0, final_wait_time=2)
+			continue
 		else:
 			clear(2, 0)
 			print(YLOW, ret, DEFAULT, end=" ")

@@ -1,5 +1,7 @@
 from libs.color import RED, GREEN, YLOW, PINK, CYAN, INVERT, BOLD, DEFAULT
 from libs.utils import clear, is_valid_number, press_enter, is_negative_number
+import random
+import string
 
 def make_deposit(cur_value, new_value):
 	after_deposit = float(cur_value) + float(new_value)
@@ -66,7 +68,7 @@ def handle_withdrawal(balance: float, login: str, bank_list: dict, nbr_withdrawa
 		print(RED, f"Error: {PINK}{withdrawal_value}{RED} is not a valid number", DEFAULT)
 	return balance, nbr_withdrawal
 
-def display_statement(login: str, statement: dict, balance: float):
+def display_statement(statement: dict, balance: float):
 	clear(2, 0)
 	print(f"Your bank statement is as following:\n{PINK}Operation: Value{DEFAULT}")
 	for op_data in statement.values():
@@ -76,6 +78,26 @@ def display_statement(login: str, statement: dict, balance: float):
 			print(f"{op}R${str(formated_val)}")
 	print(f"\nYour current balance is: {CYAN}{balance}{DEFAULT}!")
 
+def handle_login(pin: str) -> tuple[bool, str]: #debug this function: https://onlinegdb.com/uikcl7uOgb
+	try_nbr = 1
+	while try_nbr < 4:
+		check_pin = input("Enter your pin: ")
+		if check_pin != pin and try_nbr != 4:
+			clear(init_wait_time=1, final_wait_time=0)
+			if try_nbr == 3: #just to make sure the 'wrong pin message' does not appear 
+				break
+			elif try_nbr == 2:
+				print(RED, "Wrong pin, please, try again!\n", YLOW, "[note: this is your last try for today]", DEFAULT)
+				try_nbr += 1
+				continue
+			else:
+				print(RED, "Wrong pin, please, try again!", DEFAULT)
+				try_nbr += 1
+				continue
+		else:
+			return True, ""
+	return False, "Too many attempts to logged!"
+
 def account_exits(agency: str, login: str, account: str, cpf_nbr: str, bank_list: dict) -> tuple[bool, str]:
 	if bank_list.get("agency") != agency:
 		return False, f"Agency '{agency}' not found!"
@@ -83,13 +105,20 @@ def account_exits(agency: str, login: str, account: str, cpf_nbr: str, bank_list
 		return False, f"Client for the login '{login}' not found!"
 	client_data = bank_list["client"][login]
 	client_name = client_data.get("name")
+	client_pin = client_data.get("pin")
 	# account_ret, cpf_ret = client_data.get("account"), client_data.get("cpf")
 	# print(YLOW, f"DEBUG:\nclient_data return: {client_data}\nclient_name return: {client_name}\naccount return: {account_ret}\ncpf return: {cpf_ret}", DEFAULT)
 	if account != client_data.get("account"):
 		return False, f"The account '{account}' does not belong to {client_name}"
 	if cpf_nbr != client_data.get("cpf"):
 		return False, f"Invalid CPF for {client_name}'s account!"
-	return True, client_name
+	log_stt, ret = handle_login(pin=client_pin)
+	if log_stt:
+		return True, client_name
+	else:
+		clear(init_wait_time=2)
+		print(RED, ret, DEFAULT)
+		return 2
 
 def get_credentials() -> tuple[str, str, str, str]:
 	print("Please, enter your access informations:")
@@ -100,6 +129,13 @@ def get_credentials() -> tuple[str, str, str, str]:
 	account = input("Account number: ")
 	cpf_nbr = input("CPF number: ").replace(".", "").replace("-", "")
 	return str(agency), str(login), str(account), str(cpf_nbr)
+
+def mk_pin() -> str:
+	base = (random.sample(string.ascii_letters, k=4) +
+	random.sample(string.digits, 3) +
+	random.sample(["!", "#", "%", "*"], 2))
+	random.shuffle(base)
+	return ''.join(base)
 
 def mk_login(name: str, cpf: str, state: str) -> str:
 	if not (name and cpf and state):
@@ -170,8 +206,10 @@ def registered_new_user(bank_list: dict, name: str, cpf: str, street='none', hou
 		next_account = str(max(account_numbers) + 1) if account_numbers else "1"
 	else:
 		next_account = "1"
+	init_pin = mk_pin()
 	bank_list.setdefault("client", {})[login] = {
 		"account": next_account,
+		"pin": init_pin,
 		"name": name,
 		"cpf": cpf,
 		"balance": 0,
@@ -184,4 +222,5 @@ def registered_new_user(bank_list: dict, name: str, cpf: str, street='none', hou
 			"state": state
 		}
 	}
-	return True, f"User {name} registered successfully with login '{login}' and account {next_account}"
+	return True, f"User {name} registered successfully with login '{login}', account {next_account}, and your pin is {init_pin}."
+
