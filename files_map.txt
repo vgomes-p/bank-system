@@ -1,17 +1,20 @@
 BBS_Bootcamp-santander25/ /*github repository*/
-├── Basic Bank System/
+├── Bank System/
 │       ├── libs/
-│       │       ├── BBS_utils/
+│       │       ├── bank_bystem_utils/
 │       │       │       ├── __init__.py
-│       │       │       └── BBS_utils.py
-│       │       ├── Color/
+│       │       │       └── bank_bystem_utils.py
+│       │       ├── color/
 │       │       │       ├── __init__.py
 │       │       │       └── color.py
 │       │       └── utils/
 │       │               ├── __init__.py
 │       │               └── utils.py
 │       ├── __init__.py
-│       └── main.py
+│       ├── bank.py
+│       ├── client.py
+│       ├── main.py
+│       └── operation.py
 ├── file_map.txt
 ├── LICENSE
 └── README.md

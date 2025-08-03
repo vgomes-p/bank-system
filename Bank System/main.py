@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-from libs.bank_system_utils import make_deposit, withdrawal, update_statement, is_cpf_registered, is_login_registered, registered_new_user, handle_withdrawal, handle_deposit, display_statement, account_exits, get_credentials, get_new_user_credentials
-from libs.color import RED, GREEN, YLOW, PINK, CYAN, INVERT, BOLD, DEFAULT
-from libs.utils import clear, is_valid_number, press_enter, is_negative_number
+from bank import Bank
+from client import Client
+from operations import handle_deposit, handle_withdrawal
+from libs.bank_system_utils import get_credentials, get_new_user_credentials
+from libs.color import RED, GREEN, YLOW, PINK, CYAN, DEFAULT
+from libs.utils import clear, press_enter
 import time as tm
-
-bank_list = {
-	"agency": "0001", "client": {"vinny": {"account": "1", "pin": "access777", "name": "Vinicius Eduardo", "cpf": "12345678900", "balance": 0, "statement": {"operation_0": {"Operation": "", "Value": ""}}}}
-}
 
 valid_operations = {
 	"0": "Balance",
@@ -21,6 +20,7 @@ valid_operations = {
 is_yes = ['y', 'yes', '1']
 
 def pick_operation() -> str:
+	"""Prompt the user to select an operation."""
 	print("Which operation do you want to make?")
 	print("0: Check balance")
 	print("1: Make a deposit")
@@ -30,8 +30,9 @@ def pick_operation() -> str:
 	print("5: Finish session")
 	return input("Type an option:\n>>> ").strip()
 
-def run_system(bank_list: dict, login: str, statement: dict) -> int:
-	user_data = bank_list["client"][login]
+def run_system(bank: Bank, login: str) -> int:
+	"""Run the banking system for a logged-in client."""
+	client = bank.clients[login]
 	times_called = 0
 	while True:
 		print("\nPress 'ENTER' to continue")
@@ -47,59 +48,83 @@ def run_system(bank_list: dict, login: str, statement: dict) -> int:
 			return 0
 		elif operation == "5":
 			clear(0, 3)
-			print("Finishin program...")
+			print("Finishing program...")
 			return 1
 		elif operation == "0":
 			clear(0, 0)
-			formated_val = "{:.2f}".format(float(user_data['balance']))
-			print(f"Your current balance is: {CYAN}R${formated_val}{DEFAULT}")
+			formatted_val = "{:.2f}".format(float(client.balance))
+			print(f"Your current balance is: {CYAN}R${formatted_val}{DEFAULT}")
 		elif operation == "1":
 			clear(0, 0)
-			user_data["balance"] = handle_deposit(balance=user_data["balance"], login=login, bank_list=bank_list)
+			client.balance = handle_deposit(client)
 		elif operation == "2":
 			clear(0, 0)
-			user_data["balance"], times_called = handle_withdrawal(balance=user_data["balance"], login=login, bank_list=bank_list, nbr_withdrawal=times_called)
+			client.balance, times_called = handle_withdrawal(client, times_called)
 		elif operation == "3":
 			clear(0, 0)
-			display_statement(statement=statement, balance=user_data["balance"])
+			client.display_statement()
 
 def main():
+	"""Main function to run the banking system."""
+	bank = Bank(agency="0001")
+	bank.registered_new_user(
+		name="Vinicius Eduardo",
+		cpf="12345678900",
+		birthday="01/08/2000",
+		street="none",
+		house_nbr="none",
+		neighborhood="none",
+		city="none",
+		state="NO",
+		login="vinny",
+		pin="access777"
+	)
 	print(GREEN, "Welcome to the bank system", DEFAULT)
-	tm.sleep(.5)
+	tm.sleep(0.5)
 	sigfinish = 0
 	while sigfinish == 0:
 		agency, login, account, cpf_nbr = get_credentials()
-		is_valid, ret = account_exits(agency=agency, account=account, login=login, cpf_nbr=cpf_nbr, bank_list=bank_list)
+		is_valid, ret = bank.account_exists(agency=agency, login=login, account=account, cpf=cpf_nbr)
 		clear(2, 0)
 		if is_valid:
-			clear(2, 0)
-			print(f"Welcome, {CYAN}{ret}{DEFAULT}!")
-			tm.sleep(1)
-			statement = bank_list["client"][login]["statement"]
-			sigfinish = run_system(bank_list=bank_list, login=login, statement=statement)
-		elif is_valid == 2:
-			clear(init_wait_time=2, final_wait_time=0)
-			print("Restarting system...")
-			tm.sleep(1)
-			print("Please, wait!")
-			clear(init_wait_time=0, final_wait_time=2)
-			continue
+			client = bank.clients[login]
+			# pin = input("Enter your password: ")
+			pin = "access777" #FOR DEBUB
+			log_stt, ret = client.handle_login(pin)
+			if log_stt:
+				clear(2, 0)
+				print(f"Welcome, {CYAN}{ret or client.name}{DEFAULT}!")
+				tm.sleep(1)
+				sigfinish = run_system(bank=bank, login=login)
+			else:
+				clear(2, 0)
+				print(RED, ret, DEFAULT)
+				continue
 		else:
-			clear(2, 0)
 			print(YLOW, ret, DEFAULT, end=" ")
 			print("Would you like to create a new account?")
-			if str(input("Type '1', 'y' or 'yes' to create a new account, or any key to exit: ").strip().lower()) in is_yes:
-				stts, name, cpf, street, house_nbr, neighborhood, city, state, new_login = get_new_user_credentials()
+			if input("Type '1', 'y' or 'yes' to create a new account, or any key to exit: ").strip().lower() in is_yes:
+				stts, name, cpf, birthday, street, house_nbr, neighborhood, city, state, new_login = get_new_user_credentials()
 				if stts:
-					reg_stts, reg_ret = registered_new_user(bank_list=bank_list, name=name, cpf=cpf, street=street, house_nbr=house_nbr, neighborhood=neighborhood, city=city, state=state, login=new_login)
+					reg_stts, reg_ret = bank.registered_new_user(
+						name=name,
+						cpf=cpf,
+						birthday=birthday,
+						street=street,
+						house_nbr=house_nbr,
+						neighborhood=neighborhood,
+						city=city,
+						state=state,
+						login=new_login
+					)
 					clear(0, 0)
 					print(GREEN if reg_stts else RED, reg_ret, DEFAULT)
 					if reg_stts:
 						tm.sleep(2)
-						nw_statement = bank_list["client"][new_login]["statement"]
-						sigfinish = run_system(bank_list=bank_list, login=new_login, statement=nw_statement)
+						sigfinish = run_system(bank=bank, login=new_login)
 				else:
 					print(RED, name, DEFAULT)
 	clear(2, 0)
 
-main()
+if __name__ == "__main__":
+	main()
