@@ -1,5 +1,5 @@
 BBS_Bootcamp-santander25/ /*github repository*/
-├── Basic Bank System/
+├── Bank System/
 │       ├── libs/
 │       │       ├── BBS_utils/
 │       │       │       ├── __init__.py

@@ -1,4 +1,4 @@
-# Bank System Project Update – Santander Bootcamp 2025 (Back-End with Python)
+# Medium Bank System – Santander Bootcamp 2025 (Back-End with Python)
 
 ### In this update, I implemented significant improvements and new features to make the system more secure, modular, and functional:
 
