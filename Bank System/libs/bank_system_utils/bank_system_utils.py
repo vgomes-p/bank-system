@@ -2,11 +2,11 @@ from libs.color import RED, DEFAULT
 
 def get_credentials() -> tuple[str, str, str, str]:
 	print("Please, enter your access informations:")
-	agency, login, account, cpf_nbr = "0001", "vinny", "1", "12345678900" #FOR DEBUG
-	# agency = input("Agency: ")
-	# login = input("Access login: ").lower()
-	# account = input("Account number: ")
-	# cpf_nbr = input("CPF number: ").replace(".", "").replace("-", "")
+	# agency, login, account, cpf_nbr = "0001", "vinny", "1", "12345678900" #FOR DEBUG
+	agency = input("Agency: ")
+	login = input("Access login: ").lower()
+	account = input("Account number: ")
+	cpf_nbr = input("CPF number: ").replace(".", "").replace("-", "")
 	return str(agency), str(login), str(account), str(cpf_nbr)
 
 def mk_login(name: str, cpf: str, state: str) -> str:

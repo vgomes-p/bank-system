@@ -1,31 +1,12 @@
-# Basic Bank System – Santander Bootcamp 2025 (Back-End with Python)
+# Advanced Bank System – Santander Bootcamp 2025 (Back-End with Python)
 
-### This is the very first version on a banking system built with Python. The features implemented are:
+### This version introduces major improvements in code architecture, structure, and security. The procedural approach using dictionaries has been replaced with a fully object-oriented design, allowing for better scalability, maintainability, and clarity.
 
-➕ **Basic validations**
-- Rejects invalid numbers (non-numeric inputs).
-- Prevents negative values in transactions.
+🔼 **Object-Oriented Programming (OOP)** – Refactored the codebase using OOP principles.
 
-➕ **Flow system**
-- User can chose an operation, finish the operation and start another without needing to recall the project.
+🔼 **New Architecture** – Reorganized the project structure and files during the transition to OOP. (see the `files_map.txt` located at `"bank-system/files_maps.txt"`)
 
-➕ **Limitations**
-- User can only make 3 withdrawal per day.
-
-➕ **Dictionaries**
-- Bank client: with one test-account registered (vinny)
-- Client statement: with all transactions made
-> Note: This structure is temporary and will be improved in future updates.
-
-➕ **Code Modularization**
-- Although it was requested a basic code, I already made it with functions and an initial software structure.
-
-### Functionalities:
-💰 **Financial Operations** – Make deposits or withdrawals.
-
-📜 **Check Bank Statement** – Tracks all transactions (deposits/withdrawals).
-
-✅ **Check Account Balance** – Includes collection of full name, CPF, and address.
+➕ **Date of Birth requirement** – Users must now provide their date of birth to create an account.
 
 ---
 
@@ -33,7 +14,7 @@
 
 ### 1. Clone this branch
 ```bash
-git clone --single-branch --branch v0.-basic_bank_system https://github.com/vgomes-p/bank-system.git
+git clone --single-branch --branch v2.-advanced_bank_system https://github.com/vgomes-p/bank-system.git
 ```
 
 ### 2. Navigate to the correct directory
