@@ -30,7 +30,7 @@ class Bank:
 			city=city,
 			state=state
 		)
-		return True, f"User {name} registered successfully with login {YLOW}'{login}'{DEFAULT}, account {YLOW}{next_account}{DEFAULT}, and initial access pin {YLOW}{pin}{DEFAULT}"
+		return True, f"User {YLOW}'{name}'{DEFAULT} registered successfully with login {YLOW}'{login}'{DEFAULT}, account {YLOW}{next_account}{DEFAULT}, and initial access pin {YLOW}{pin}{DEFAULT}"
 
 	def is_cpf_registered(self, cpf: str) -> bool:
 		return any(client.cpf == cpf for client in self.clients.values())
