@@ -21,7 +21,7 @@ class Client:
 
 	def mk_deposit(self, amount: float) -> float:
 		self.balance += float(amount)
-		operation_time = datetime.now()
+		operation_time = datetime.now().replace(microsecond=0)
 		self._update_statement(operation="Deposit: +", value=amount, operation_time=str(operation_time))
 		return self.balance
 
@@ -31,7 +31,7 @@ class Client:
 		if float(amount) > self.balance:
 			return self.balance, False
 		self.balance -= float(amount)
-		operation_time = datetime.now()
+		operation_time = datetime.now().replace(microsecond=0)
 		self._update_statement(operation="Withdrawal: -", value=amount, operation_time=str(operation_time))
 		return self.balance, True
 
