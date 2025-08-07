@@ -1,4 +1,5 @@
 from libs.color import RED, YLOW, PINK, CYAN, DEFAULT
+from datetime import datetime
 from libs.utils import clear
 
 class Client:
@@ -16,11 +17,12 @@ class Client:
 			"city": city,
 			"state": state
 		}
-		self.statement = {"operation_0": {"Operation": "", "Value": ""}}
+		self.statement = {"operation_0": {"Operation": "", "Value": "", "Operation_time": ""}}
 
 	def mk_deposit(self, amount: float) -> float:
 		self.balance += float(amount)
-		self._update_statement("Deposit: +", amount)
+		operation_time = datetime.now()
+		self._update_statement(operation="Deposit: +", value=amount, operation_time=str(operation_time))
 		return self.balance
 
 	def mk_withdrawal(self, amount: float, withdrawal_count: int, protect_limit: int = 3) -> tuple[float, bool]:
@@ -29,22 +31,23 @@ class Client:
 		if float(amount) > self.balance:
 			return self.balance, False
 		self.balance -= float(amount)
-		self._update_statement("Withdrawal: -", amount)
+		operation_time = datetime.now()
+		self._update_statement(operation="Withdrawal: -", value=amount, operation_time=str(operation_time))
 		return self.balance, True
 
-	def _update_statement(self, operation: str, value: float) -> None:
+	def _update_statement(self, operation: str, value: float, operation_time: str) -> None:
 		next_id = max([int(op.split("_")[1]) for op in self.statement.keys()] + [-1]) + 1
 		op_id = f"operation_{next_id}"
-		self.statement[op_id] = {"Operation": operation, "Value": value}
+		self.statement[op_id] = {"Operation": operation, "Value": value, "Operation_time": operation_time}
 
 	def display_statement(self) -> None:
 		clear(2, 0)
-		print(f"Your bank statement is as following:\n{PINK}Operation: Value{DEFAULT}")
+		print(f"Your bank statement is as following:\n{PINK}On Time when operation happen -> Operation: Value{DEFAULT}")
 		for op_data in self.statement.values():
-			op, val = op_data["Operation"], op_data["Value"]
+			op, val, op_time = op_data["Operation"], op_data["Value"], op_data["Operation_time"]
 			if op:
 				formatted_val = "{:.2f}".format(float(val))
-				print(f"{op}R${formatted_val}")
+				print(f"On {op_time} -> {op}R${formatted_val}")
 		formatted_balance = "{:.2f}".format(self.balance)
 		print(f"\nYour current balance is: {CYAN}{formatted_balance}{DEFAULT}!")
 
