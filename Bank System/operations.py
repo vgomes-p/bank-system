@@ -16,28 +16,28 @@ def handle_deposit(client: Client) -> float:
 		print(RED, f"Error: {PINK}{formated_deposit}{RED} is not a valid number", DEFAULT)
 	return client.balance
 
-def handle_withdrawal(client: Client, nbr_withdrawal: int) -> tuple[float, int]:
-	if nbr_withdrawal == 3:
+def handle_withdrawal(client: Client) -> float:
+	if client.get_daily_withdrawal_cnt() >= 3:
 		clear(0, 1.5)
 		print(PINK, "Sorry, you cannot make more withdrawals today!", DEFAULT)
-		return client.balance, nbr_withdrawal
+		return client.balance
 	withdrawal_value = input("Type a value to withdrawal: ").strip()
 	clear(2, 0)
 	if is_negative_number(withdrawal_value):
 		print(RED, f"Error: negative number is not allowed, just type a number without signal", DEFAULT)
 	elif is_valid_number(withdrawal_value):
-		nw_balance, success = client.mk_withdrawal(withdrawal_value, nbr_withdrawal)
+		nw_balance, success = client.mk_withdrawal(withdrawal_value)
 		if not success:
 			formatted_balance = "{:.2f}".format(client.balance)
 			print(RED, f"You cannot withdrawal a value equal or bigger than R${formatted_balance}!", DEFAULT)
 		else:
-			nbr_withdrawal += 1
 			formatted_balance = "{:.2f}".format(client.balance)
 			print(f"Your current balance is: {CYAN}R${formatted_balance}{DEFAULT}")
-			if nbr_withdrawal == 2:
-				print(YLOW, "You can now make one more withdrawal!", DEFAULT)
-			elif nbr_withdrawal == 3:
+			remain_withdrawal = 3 - client.get_daily_withdrawal_cnt()
+			if remain_withdrawal > 0:
+				print(YLOW, f"You can now make {remain_withdrawal} more withdrawal!", DEFAULT)
+			else:
 				print(RED, "This was your LAST withdrawal for today!", DEFAULT)
 	else:
 		print(RED, f"Error: {PINK}{withdrawal_value}{RED} is not a valid number", DEFAULT)
-	return client.balance, nbr_withdrawal
+	return client.balance

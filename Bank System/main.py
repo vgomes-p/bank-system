@@ -59,13 +59,12 @@ def run_system(bank: Bank, login: str) -> int:
 			client.balance = handle_deposit(client)
 		elif operation == "2":
 			clear(0, 0)
-			client.balance, times_called = handle_withdrawal(client, times_called)
+			client.balance = handle_withdrawal(client)
 		elif operation == "3":
 			clear(0, 0)
 			client.display_statement()
 
 def main():
-	"""Main function to run the banking system."""
 	bank = Bank(agency="0001")
 	bank.registered_new_user(
 		name="Vinicius Eduardo",
@@ -88,8 +87,8 @@ def main():
 		clear(2, 0)
 		if is_valid:
 			client = bank.clients[login]
-			# pin = input("Enter your password: ")
-			pin = "access777" #FOR DEBUB
+			pin = input("Enter your password: ")
+			# pin = "access777" #FOR DEBUB
 			log_stt, ret = client.handle_login(pin)
 			if log_stt:
 				clear(2, 0)

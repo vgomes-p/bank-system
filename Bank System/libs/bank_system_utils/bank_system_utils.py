@@ -1,12 +1,13 @@
 from libs.color import RED, DEFAULT
+from datetime import datetime
 
 def get_credentials() -> tuple[str, str, str, str]:
 	print("Please, enter your access informations:")
 	agency, login, account, cpf_nbr = "0001", "vinny", "1", "12345678900" #FOR DEBUG
-	# agency = input("Agency: ")
-	# login = input("Access login: ").lower()
-	# account = input("Account number: ")
-	# cpf_nbr = input("CPF number: ").replace(".", "").replace("-", "")
+	agency = input("Agency: ")
+	login = input("Access login: ").lower()
+	account = input("Account number: ")
+	cpf_nbr = input("CPF number: ").replace(".", "").replace("-", "")
 	return str(agency), str(login), str(account), str(cpf_nbr)
 
 def mk_login(name: str, cpf: str, state: str) -> str:
@@ -57,3 +58,6 @@ def get_new_user_credentials() -> tuple[bool, str, str, str, str, str, str, str,
 			return True, name, cpf, birthday, street, house_nbr, neighborhood, city, state, login
 		print(f"{RED}Login could not be created. Please, try again!{DEFAULT}")
 	return False, f"Error to register user", "", "", "", "", "", "", "", ""
+
+def mk_file_name(name: str, day: str) -> str:
+	return f"{name}_statement_{day}.txt"
