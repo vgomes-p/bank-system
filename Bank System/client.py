@@ -2,11 +2,44 @@ from libs.color import GREEN, RED, YLOW, PINK, CYAN, DEFAULT
 from libs.bank_system_utils import mk_file_name
 from datetime import datetime
 from libs.utils import clear
-from pathlib import Path
-import sqlite3
 from sqlite3 import Error
+from pathlib import Path
+import getpass
+import platform
+import sqlite3
+import os
 
-download_path = Path.home() / "Downloads"
+def get_downloads_path() -> str:
+	try:
+		if platform.system() == "Windows":
+			return os.path.join(os.path.expanduser("~"), "Downloads")
+		elif platform.system() == "Linux" and "microsoft" in platform.uname().release.lower():
+			username = None
+			if "WSLENV" in os.environ and "USERPROFILE" in os.environ:
+				userprofile = os.environ["USERPROFILE"]
+				username = os.path.basename(userprofile)
+			if not username and "USERNAME" in os.environ:
+				username = os.environ["USERNAME"]
+			if not username:
+				username = os.getlogin()
+			downloads_path = f"/mnt/c/Users/{username}/Downloads"
+			if os.path.isdir(downloads_path):
+				return downloads_path
+			else:
+				users_dir = "/mnt/c/Users"
+				if os.path.isdir(users_dir):
+					for user in os.listdir(users_dir):
+						if user.lower() not in ['public', 'default', 'all users']:
+							potential_path = f"/mnt/c/Users/{user}/Downloads"
+							if os.path.isdir(potential_path):
+								return potential_path
+				return os.path.expanduser("~/Downloads")
+		else:
+			return os.path.expanduser("~/Downloads")
+	except Exception as e:
+		return os.path.expanduser("~/Downloads")
+
+download_path = Path(get_downloads_path())
 
 class Client:
 	def __init__(self, name: str, cpf: str, birthday: str, account: str, pin: str, street: str, house_nbr: str, neighborhood: str, city: str, state: str, login: str = "", db_file: str = "bank.db"):
@@ -85,21 +118,22 @@ class Client:
 		finally:
 			conn.close()
 
-	def _print_statement(self, statement_path: str) -> None:
+	def _print_statement(self, statement_path: str, balance: str) -> None:
 		try:
-			with open(statement_path, "x") as writing:
+			with open(statement_path, "w") as writing:
 				writing.write("Your bank statement is as following:\n")
-				writing.write("On Time when operation happen -> Operation: Value\n")
+				writing.write("\nOn Time when operation happen -> Operation: Value\n")
 				for op_data in self.statement.values():
 					op, val, op_time = op_data["Operation"], op_data["Value"], op_data["Operation_time"]
 					if op:
 						op_display = op.capitalize()
 						formatted_val = "{:.2f}".format(float(val))
 						writing.write(f"You made a {op_display} of R${formatted_val} on {op_time}.\n")
+				writing.write(f"\nYour current balance is: R${balance}!")
 		except IOError as e:
 			print(f"{RED}Error writing statement to file: {e}{DEFAULT}")
 
-	def _is_to_print(self) -> tuple[int, str]:
+	def _is_to_print(self) -> tuple[bool, str]:
 		while True:
 			try:
 				answer = input("Do you want to print this statement?\n[Please, answer 'y' for yes and 'n' for no]\n>>> ")
@@ -115,14 +149,24 @@ class Client:
 
 	def _handle_print_statement(self, name: str, date: str) -> str:
 		if name and date:
-			file_name = mk_file_name(name, date.replace(" ", "_").replace(":", "-"))
-			statement_path = f"{download_path}/{file_name}"
-			self._print_statement(statement_path=statement_path)
-		return f"Your statement were downloaded at {download_path}."
+			try:
+				file_name = mk_file_name(name, date.replace(" ", "_").replace(":", "-"))
+				statement_path = download_path / file_name
+				if not download_path.exists():
+					os.makedirs(download_path, exist_ok=True)
+				if not os.access(download_path, os.W_OK):
+					return f"{RED}Error: Downloads directory ({download_path}) is not writable.{DEFAULT}"
+				self._print_statement(statement_path=str(statement_path), balance=self.balance)
+				return f"Your statement were downloaded at {statement_path}."
+			except PermissionError:
+				return f"{RED}Error: Permission deniel when trying to write to {download_path}.{DEFAULT}"
+			except Exception as e:
+				return f"{RED}Error generating statement file: {e}{DEFAULT}"
+		return f"{RED}Error: Could not generate statement file.{DEFAULT}"
 
 	def display_statement(self) -> None:
 		clear(2, 0)
-		print(f"Your bank statement is as following:\n{PINK}On Time when operation happen -> Operation: Value{DEFAULT}")
+		print(f"Your bank statement is as following:\n\n{PINK}On Time when operation happen -> Operation: Value{DEFAULT}")
 		for op_data in self.statement.values():
 			op, val, op_time = op_data["Operation"], op_data["Value"], op_data["Operation_time"]
 			if op:
@@ -130,13 +174,13 @@ class Client:
 				color = GREEN if op == 'deposit' else RED
 				formatted_val = "{:.2f}".format(float(val))
 				print(f"You made a {color}{op_display}{DEFAULT} of {YLOW}R${formatted_val}{DEFAULT} on {CYAN}{op_time}{DEFAULT}.")
+		formatted_balance = "{:.2f}".format(self.balance)
+		print(f"\nYour current balance is: {YLOW}R${formatted_balance}{DEFAULT}!")
 		ret, name = self._is_to_print()
 		if ret:
 			today = datetime.now().strftime("%Y-%m-%d_%H-%M")
 			ret = self._handle_print_statement(name=name, date=today)
 			print(ret)
-		formatted_balance = "{:.2f}".format(self.balance)
-		print(f"\nYour current balance is: {YLOW}R${formatted_balance}{DEFAULT}!")
 
 	def handle_login(self, input_pin: str, max_attempts: int = 3) -> tuple[bool, str]:
 		try_nbr = 1
@@ -149,7 +193,7 @@ class Client:
 				print(RED, "Wrong password, please, try again!\n", YLOW, "[note: this is your last try for today]", DEFAULT)
 			else:
 				print(RED, "Wrong password, please, try again!", DEFAULT)
-			check_pin = input("Enter your password: ")
+			check_pin = getpass.getpass("Enter your password: ")
 			try_nbr += 1
 		if check_pin == self.pin:
 			return True, ""

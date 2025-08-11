@@ -7,6 +7,7 @@ from libs.bank_system_utils import get_credentials, get_new_user_credentials
 from libs.color import RED, GREEN, YLOW, PINK, CYAN, DEFAULT
 from libs.utils import clear, press_enter
 import time as tm
+import getpass
 
 valid_operations = {
 	"0": "Balance",
@@ -87,7 +88,7 @@ def main():
 		clear(2, 0)
 		if is_valid:
 			client = bank.clients[login]
-			pin = input("Enter your password: ")
+			pin = getpass.getpass("Enter your password: ")
 			# pin = "access777" #FOR DEBUB
 			log_stt, ret = client.handle_login(pin)
 			if log_stt:

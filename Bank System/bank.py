@@ -34,7 +34,7 @@ class Bank:
 				)
 			''')
 			cursor.execute('''
-				CREATE TABLE IF NOT EXISTS withdrawal_count (
+				CREATE TABLE IF NOT EXISTS withdrawal_counts (
 					login TEXT NOT NULL,
 					date TEXT NOT NULL,
 					count INTEGER NOT NULL,
@@ -43,7 +43,7 @@ class Bank:
 				)
 			''')
 			cursor.execute('''
-				CREATE TABLE IF NOT EXISTS withdrawal_count (
+				CREATE TABLE IF NOT EXISTS statements (
 					login TEXT NOT NULL,
 					operation_id TEXT NOT NULL,
 					operation TEXT NOT NULL,
@@ -97,9 +97,18 @@ class Bank:
 			return False, f"CPF {cpf} is already registered!"
 		if self.is_login_registered(login):
 			return False, f"Login {login} already registered!"
-		
-		account_nbrs = [int(client.account) for client in self.clients.values() if client.account.isdigit()]
-		next_account = str(max(account_nbrs) + 1) if account_nbrs else "1"
+		try:
+			conn = sqlite3.connect(self.db_file)
+			cursor = conn.cursor()
+			cursor.execute("SELECT account FROM clients WHERE account GLOB '[0-9]*'")
+			account_nbrs = [int(account) for account, in cursor.fetchall() if account.isdigit()]
+			next_account = str(max(account_nbrs) + 1) if account_nbrs else "1"
+		except Error as e:
+			print(f"{RED}Error checking account numbers: {e}{DEFAULT}")
+			return False, f"Failed to register user due to database error: {e}"
+		finally:
+			conn.close()
+			
 		if pin == "no_pin":
 			pin = self._mk_pin()
 		client = Client(
@@ -126,8 +135,8 @@ class Bank:
 			''', (login, name, cpf, birthday, next_account, pin, 0.0, street, house_nbr, neighborhood, city, state))
 			conn.commit()
 		except Error as e:
-			print(f"{RED}Error saving client: {e}")
-			return False, f"Failed to registered user due to database error: {e}"
+			print(f"{RED}Error saving client: {e}{DEFAULT}")
+			return False, f"Failed to register user due to database error: {e}"
 		finally:
 			conn.close()
 		return True, f"User {name} registered successfully with login {YLOW}'{login}'{DEFAULT}, account {YLOW}{next_account}{DEFAULT}, and initial access pin {YLOW}{pin}{DEFAULT}"
