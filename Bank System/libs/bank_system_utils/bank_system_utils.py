@@ -21,8 +21,15 @@ def mk_login(name: str, cpf: str, state: str) -> str:
     name_splited = list(name.split(" "))
     first_name = str(name_splited[0]).replace("'", "").replace("[", "").replace("]", "")
     last_name = str(name_splited[-1]).replace("'", "").replace("[", "").replace("]", "")
-    half_last_name, cpf_num_0, cpf_num_1, end = last_name[0].lower(), cpf[1], cpf[8], state.upper()
-    return f"{first_name[:4].lower()}{cpf_num_0}{cpf_num_1}{half_last_name.title()}-{end}"
+    half_last_name, cpf_num_0, cpf_num_1, end = (
+        last_name[0].lower(),
+        cpf[1],
+        cpf[8],
+        state.upper(),
+    )
+    return (
+        f"{first_name[:4].lower()}{cpf_num_0}{cpf_num_1}{half_last_name.title()}-{end}"
+    )
 
 
 def is_date_valid(date: str) -> bool:
@@ -36,7 +43,9 @@ def is_date_valid(date: str) -> bool:
         return False
 
 
-def get_new_user_credentials() -> tuple[bool, str, str, str, str, str, str, str, str, str]:
+def get_new_user_credentials() -> (
+    tuple[bool, str, str, str, str, str, str, str, str, str]
+):
     print("Please, enter the following informations to create your account!")
     while True:
         name = input("Full name: ").strip()
@@ -48,17 +57,32 @@ def get_new_user_credentials() -> tuple[bool, str, str, str, str, str, str, str,
         city = input("City: ").strip()
         state = input("State [eg.: SP, MG]: ").strip().upper()
         if not all([name, cpf, birthday, street, house_nbr, neighborhood, city, state]):
-            print(f"{RED}No item can be empty!{DEFAULT}\nPlease, enter the following information correctly!")
+            print(
+                f"{RED}No item can be empty!{DEFAULT}\nPlease, enter the following information correctly!"
+            )
             continue
         if len(cpf) != 11 or not cpf.isdigit():
-            print(f"{RED}CPF can only contains 11 numbers!{DEFAULT}\nPlease, enter the following information correctly!")
+            print(
+                f"{RED}CPF can only contains 11 numbers!{DEFAULT}\nPlease, enter the following information correctly!"
+            )
             continue
         if not is_date_valid(birthday):
             print(RED, "Invalid date format! Use DD/MM/YYYY.", DEFAULT)
             continue
         login = mk_login(name=name, cpf=cpf, state=state)
         if login:
-            return True, name, cpf, birthday, street, house_nbr, neighborhood, city, state, login
+            return (
+                True,
+                name,
+                cpf,
+                birthday,
+                street,
+                house_nbr,
+                neighborhood,
+                city,
+                state,
+                login,
+            )
         print(f"{RED}Login could not be created. Please, try again!{DEFAULT}")
     return False, "Error to register user", "", "", "", "", "", "", "", ""
 

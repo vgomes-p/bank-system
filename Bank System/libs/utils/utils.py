@@ -1,7 +1,8 @@
 import os
 import time
 import sys
-if os.name == 'nt':
+
+if os.name == "nt":
     import msvcrt
 else:
     import termios
@@ -10,7 +11,7 @@ else:
 
 def clear(init_wait_time=0, final_wait_time=0):
     time.sleep(float(init_wait_time))
-    os.system('cls' if os.name == 'nt' else 'clear')
+    os.system("cls" if os.name == "nt" else "clear")
     time.sleep(float(final_wait_time))
 
 
@@ -23,11 +24,11 @@ def is_valid_number(value):
 
 
 def press_enter():
-    if os.name == 'nt':
+    if os.name == "nt":
         while True:
             if msvcrt.kbhit():
                 key = msvcrt.getch()
-                if key == b'\r':
+                if key == b"\r":
                     break
             time.sleep(0.01)
     else:
@@ -37,7 +38,7 @@ def press_enter():
             tty.setraw(fd)
             while True:
                 ch = sys.stdin.read(1)
-                if ch == '\r' or ch == '\n':
+                if ch == "\r" or ch == "\n":
                     break
         finally:
             termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)

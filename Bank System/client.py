@@ -14,7 +14,10 @@ def get_downloads_path() -> str:
     try:
         if platform.system() == "Windows":
             return os.path.join(os.path.expanduser("~"), "Downloads")
-        elif platform.system() == "Linux" and "microsoft" in platform.uname().release.lower():
+        elif (
+            platform.system() == "Linux"
+            and "microsoft" in platform.uname().release.lower()
+        ):
             username = None
             if "WSLENV" in os.environ and "USERPROFILE" in os.environ:
                 userprofile = os.environ["USERPROFILE"]
@@ -30,7 +33,7 @@ def get_downloads_path() -> str:
                 users_dir = "/mnt/c/Users"
                 if os.path.isdir(users_dir):
                     for user in os.listdir(users_dir):
-                        if user.lower() not in ['public', 'default', 'all users']:
+                        if user.lower() not in ["public", "default", "all users"]:
                             potential_path = f"/mnt/c/Users/{user}/Downloads"
                             if os.path.isdir(potential_path):
                                 return potential_path
@@ -45,7 +48,21 @@ download_path = Path(get_downloads_path())
 
 
 class Client:
-    def __init__(self, name: str, cpf: str, birthday: str, account: str, pin: str, street: str, house_nbr: str, neighborhood: str, city: str, state: str, login: str = "", db_file: str = "bank.db"):
+    def __init__(
+        self,
+        name: str,
+        cpf: str,
+        birthday: str,
+        account: str,
+        pin: str,
+        street: str,
+        house_nbr: str,
+        neighborhood: str,
+        city: str,
+        state: str,
+        login: str = "",
+        db_file: str = "bank.db",
+    ):
         self.name = name
         self.cpf = cpf
         self.birthday = birthday
@@ -58,20 +75,27 @@ class Client:
             "house_nbr": house_nbr,
             "neighborhood": neighborhood,
             "city": city,
-            "state": state
+            "state": state,
         }
-        self.statement = {"operation_0": {"Operation": "", "Value": "", "Operation_time": ""}}
+        self.statement = {
+            "operation_0": {"Operation": "", "Value": "", "Operation_time": ""}
+        }
         self.withdrawal_cnt = {}
         self.db_file = db_file
 
     def mk_deposit(self, amount: float) -> float:
         self.balance += float(amount)
         operation_time = datetime.now().replace(microsecond=0)
-        self._update_statement(operation="deposit", value=amount, operation_time=str(operation_time))
+        self._update_statement(
+            operation="deposit", value=amount, operation_time=str(operation_time)
+        )
         try:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
-            cursor.execute("UPDATE clients SET balance = ? WHERE account = ?", (self.balance, self.account))
+            cursor.execute(
+                "UPDATE clients SET balance = ? WHERE account = ?",
+                (self.balance, self.account),
+            )
             conn.commit()
         except Error as e:
             print(f"{RED}Error saving deposit: {e}{DEFAULT}")
@@ -79,24 +103,34 @@ class Client:
             conn.close()
         return self.balance
 
-    def mk_withdrawal(self, amount: float, protect_limit: int = 3) -> tuple[float, bool]:
+    def mk_withdrawal(
+        self, amount: float, protect_limit: int = 3
+    ) -> tuple[float, bool]:
         if self.get_daily_withdrawal_cnt() >= protect_limit:
             return self.balance, False
         if float(amount) > self.balance:
             return self.balance, False
         self.balance -= float(amount)
         operation_time = datetime.now().replace(microsecond=0)
-        self._update_statement(operation="withdrawal", value=amount, operation_time=str(operation_time))
+        self._update_statement(
+            operation="withdrawal", value=amount, operation_time=str(operation_time)
+        )
         self.increment_withdrawal_cnt()
         try:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
-            cursor.execute("UPDATE clients SET balance = ? WHERE account = ?", (self.balance, self.account))
+            cursor.execute(
+                "UPDATE clients SET balance = ? WHERE account = ?",
+                (self.balance, self.account),
+            )
             current_date = datetime.now().strftime("%Y-%m-%d")
-            cursor.execute('''
+            cursor.execute(
+                """
                 INSERT OR REPLACE INTO withdrawal_counts (login, date, count)
                 VALUES (?, ?, ?)
-                ''', (self.login, current_date, self.get_daily_withdrawal_cnt()))
+                """,
+                (self.login, current_date, self.get_daily_withdrawal_cnt()),
+            )
             conn.commit()
         except Error as e:
             print(f"{RED}Error saving withdrawal: {e}{DEFAULT}")
@@ -104,17 +138,28 @@ class Client:
             conn.close()
         return self.balance, True
 
-    def _update_statement(self, operation: str, value: float, operation_time: str) -> None:
-        next_id = max([int(op.split("_")[1]) for op in self.statement.keys()] + [-1]) + 1
+    def _update_statement(
+        self, operation: str, value: float, operation_time: str
+    ) -> None:
+        next_id = (
+            max([int(op.split("_")[1]) for op in self.statement.keys()] + [-1]) + 1
+        )
         op_id = f"operation_{next_id}"
-        self.statement[op_id] = {"Operation": operation, "Value": value, "Operation_time": operation_time}
+        self.statement[op_id] = {
+            "Operation": operation,
+            "Value": value,
+            "Operation_time": operation_time,
+        }
         try:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
-            cursor.execute('''
+            cursor.execute(
+                """
                 INSERT INTO statements (login, operation_id, operation, value, operation_time)
                 VALUES (?, ?, ?, ?, ?)
-            ''', (self.login, op_id, operation, value, operation_time))
+            """,
+                (self.login, op_id, operation, value, operation_time),
+            )
             conn.commit()
         except Error:
             print(RED, "Error saving statement: {e}", DEFAULT)
@@ -127,11 +172,17 @@ class Client:
                 writing.write("Your bank statement is as following:\n")
                 writing.write("\nOn Time when operation happen -> Operation: Value\n")
                 for op_data in self.statement.values():
-                    op, val, op_time = op_data["Operation"], op_data["Value"], op_data["Operation_time"]
+                    op, val, op_time = (
+                        op_data["Operation"],
+                        op_data["Value"],
+                        op_data["Operation_time"],
+                    )
                     if op:
                         op_display = op.capitalize()
                         formatted_val = "{:.2f}".format(float(val))
-                        writing.write(f"You made a {op_display} of R${formatted_val} on {op_time}.\n")
+                        writing.write(
+                            f"You made a {op_display} of R${formatted_val} on {op_time}.\n"
+                        )
                 writing.write(f"\nYour current balance is: R${balance}!")
         except IOError as e:
             print(f"{RED}Error writing statement to file: {e}{DEFAULT}")
@@ -139,11 +190,13 @@ class Client:
     def _is_to_print(self) -> tuple[bool, str]:
         while True:
             try:
-                answer = input("Do you want to print this statement?\n[Please, answer 'y' for yes and 'n' for no]\n>>> ")
+                answer = input(
+                    "Do you want to print this statement?\n[Please, answer 'y' for yes and 'n' for no]\n>>> "
+                )
                 if answer not in ["y", "n"]:
                     print(YLOW, "Please, answer as requested!", DEFAULT)
                     continue
-                if answer == 'n':
+                if answer == "n":
                     return False, ""
                 name = self.name.split(" ")
                 return True, name[0]
@@ -159,7 +212,9 @@ class Client:
                     os.makedirs(download_path, exist_ok=True)
                 if not os.access(download_path, os.W_OK):
                     return f"{RED}Error: Downloads directory ({download_path}) is not writable.{DEFAULT}"
-                self._print_statement(statement_path=str(statement_path), balance=self.balance)
+                self._print_statement(
+                    statement_path=str(statement_path), balance=self.balance
+                )
                 return f"Your statement were downloaded at {statement_path}."
             except PermissionError:
                 return f"{RED}Error: Permission deniel when trying to write to {download_path}.{DEFAULT}"
@@ -169,14 +224,22 @@ class Client:
 
     def display_statement(self) -> None:
         clear(2, 0)
-        print(f"Your bank statement is as following:\n\n{PINK}On Time when operation happen -> Operation: Value{DEFAULT}")
+        print(
+            f"Your bank statement is as following:\n\n{PINK}On Time when operation happen -> Operation: Value{DEFAULT}"
+        )
         for op_data in self.statement.values():
-            op, val, op_time = op_data["Operation"], op_data["Value"], op_data["Operation_time"]
+            op, val, op_time = (
+                op_data["Operation"],
+                op_data["Value"],
+                op_data["Operation_time"],
+            )
             if op:
                 op_display = op.capitalize()
-                color = GREEN if op == 'deposit' else RED
+                color = GREEN if op == "deposit" else RED
                 formatted_val = "{:.2f}".format(float(val))
-                print(f"You made a {color}{op_display}{DEFAULT} of {YLOW}R${formatted_val}{DEFAULT} on {CYAN}{op_time}{DEFAULT}.")
+                print(
+                    f"You made a {color}{op_display}{DEFAULT} of {YLOW}R${formatted_val}{DEFAULT} on {CYAN}{op_time}{DEFAULT}."
+                )
         formatted_balance = "{:.2f}".format(self.balance)
         print(f"\nYour current balance is: {YLOW}R${formatted_balance}{DEFAULT}!")
         ret, name = self._is_to_print()
@@ -193,7 +256,13 @@ class Client:
                 return True, ""
             clear(1, 0)
             if try_nbr == max_attempts - 1:
-                print(RED, "Wrong password, please, try again!\n", YLOW, "[note: this is your last try for today]", DEFAULT)
+                print(
+                    RED,
+                    "Wrong password, please, try again!\n",
+                    YLOW,
+                    "[note: this is your last try for today]",
+                    DEFAULT,
+                )
             else:
                 print(RED, "Wrong password, please, try again!", DEFAULT)
             check_pin = getpass.getpass("Enter your password: ")

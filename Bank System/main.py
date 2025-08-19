@@ -17,7 +17,7 @@ valid_operations = {
     "5": "finish session",
 }
 
-is_yes = ['y', 'yes', '1']
+is_yes = ["y", "yes", "1"]
 
 
 def pick_operation() -> str:
@@ -78,14 +78,16 @@ def main():
         city="none",
         state="NO",
         login="vinny",
-        pin="access777"
+        pin="access777",
     )
     print(GREEN, "Welcome to the bank system", DEFAULT)
     tm.sleep(0.5)
     sigfinish = 0
     while sigfinish == 0:
         agency, login, account, cpf_nbr = get_credentials()
-        is_valid, ret = bank.account_exists(agency=agency, login=login, account=account, cpf=cpf_nbr)
+        is_valid, ret = bank.account_exists(
+            agency=agency, login=login, account=account, cpf=cpf_nbr
+        )
         clear(2, 0)
         if is_valid:
             client = bank.clients[login]
@@ -104,8 +106,26 @@ def main():
         else:
             print(YLOW, ret, DEFAULT, end=" ")
             print("Would you like to create a new account?")
-            if input("Type '1', 'y' or 'yes' to create a new account, or any key to exit: ").strip().lower() in is_yes:
-                stts, name, cpf, birthday, street, house_nbr, neighborhood, city, state, new_login = get_new_user_credentials()
+            if (
+                input(
+                    "Type '1', 'y' or 'yes' to create a new account, or any key to exit: "
+                )
+                .strip()
+                .lower()
+                in is_yes
+            ):
+                (
+                    stts,
+                    name,
+                    cpf,
+                    birthday,
+                    street,
+                    house_nbr,
+                    neighborhood,
+                    city,
+                    state,
+                    new_login,
+                ) = get_new_user_credentials()
                 if stts:
                     reg_stts, reg_ret = bank.registered_new_user(
                         name=name,
@@ -116,7 +136,7 @@ def main():
                         neighborhood=neighborhood,
                         city=city,
                         state=state,
-                        login=new_login
+                        login=new_login,
                     )
                     clear(0, 0)
                     print(GREEN if reg_stts else RED, reg_ret, DEFAULT)
