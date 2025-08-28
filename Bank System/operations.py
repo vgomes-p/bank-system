@@ -4,6 +4,7 @@ from libs.utils import clear, is_valid_number, is_negative_number
 
 
 def handle_deposit(client: Client) -> float:
+    '''Receive and check is the value that the user's wants to deposit is valid'''
     deposit = input("Type a value to deposit: ").strip()
     clear(2, 0)
     if is_negative_number(deposit):
@@ -25,6 +26,7 @@ def handle_deposit(client: Client) -> float:
 
 
 def handle_withdrawal(client: Client) -> float:
+    '''Receive and check is the value that the user's wants to withdrawal is valid'''
     if client.get_daily_withdrawal_cnt() >= 3:
         clear(0, 1.5)
         print(PINK, "Sorry, you cannot make more withdrawals today!", DEFAULT)

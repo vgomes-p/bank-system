@@ -2,16 +2,18 @@ from libs.color import RED, DEFAULT
 
 
 def get_credentials() -> tuple[str, str, str, str]:
+    '''Collect users credential data'''
     print("Please, enter your access informations:")
     # agency, login, account, cpf_nbr = "0001", "vinny", "1", "12345678900" #FOR DEBUG
     agency = input("Agency: ")
-    login = input("Access login: ").lower()
+    login = input("Access login: ")
     account = input("Account number: ")
     cpf_nbr = input("CPF number: ").replace(".", "").replace("-", "")
     return str(agency), str(login), str(account), str(cpf_nbr)
 
 
 def mk_login(name: str, cpf: str, state: str) -> str:
+    '''Create a login using user's data'''
     if not (name and cpf and state):
         return ""
     if len(cpf) != 11 or not cpf.isdigit():
@@ -33,6 +35,7 @@ def mk_login(name: str, cpf: str, state: str) -> str:
 
 
 def is_date_valid(date: str) -> bool:
+    '''Checks if a date is correct'''
     try:
         day, month, year = map(int, date.split("/"))
         if len(str(day)) <= 2 and len(str(month)) <= 2 and len(str(year)) == 4:
@@ -46,6 +49,7 @@ def is_date_valid(date: str) -> bool:
 def get_new_user_credentials() -> (
     tuple[bool, str, str, str, str, str, str, str, str, str]
 ):
+    '''Collect all data from new users for a user data base'''
     print("Please, enter the following informations to create your account!")
     while True:
         name = input("Full name: ").strip()
@@ -88,4 +92,5 @@ def get_new_user_credentials() -> (
 
 
 def mk_file_name(name: str, day: str) -> str:
+    '''return a standardized name for the statement file'''
     return f"{name}_statement_{day}.txt"

@@ -15,6 +15,7 @@ class Bank:
         self._load_clients()
 
     def __init__db(self) -> None:
+        '''Start's the data bases if it does not exist'''
         try:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
@@ -66,7 +67,16 @@ class Bank:
         finally:
             conn.close()
 
+    def _get_login_list(self) -> tuple:
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+        cursor.execute("SELECT login FROM clients")
+        res = cursor.fetchall()
+        conn.close()
+        return tuple(row[0] for row in res)
+
     def _load_clients(self) -> None:
+        '''recover a user's data for system run'''
         try:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
@@ -139,6 +149,7 @@ class Bank:
         login: str,
         pin: str = "no_pin",
     ) -> tuple[bool, str]:
+        '''Checks if new user's credential are valid, if so, register them in the data base'''
         if self.is_cpf_registered(cpf):
             return False, f"CPF {cpf} is already registered!"
         if self.is_login_registered(login):
@@ -208,17 +219,21 @@ class Bank:
         )
 
     def is_cpf_registered(self, cpf: str) -> bool:
+        '''Checks is a CPF already belongs to one account in the system'''
         return any(client.cpf == cpf for client in self.clients.values())
 
     def is_login_registered(self, login: str) -> bool:
+        '''Checks is a login already belongs to one account in the system'''
         return login in self.clients
 
     def account_exists(
         self, agency: str, login: str, account: str, cpf: str
     ) -> tuple[bool, str]:
+        '''Checks is an account already exist'''
         if self.agency != agency:
             return False, f"Agency '{agency}' not found!"
-        if login not in self.clients:
+        logins = self._get_login_list()
+        if login not in logins:
             return False, f"Client for the login '{login}' not found!"
         client = self.clients[login]
         if account != client.account:
@@ -228,6 +243,7 @@ class Bank:
         return True, client.name
 
     def _mk_pin(self) -> str:
+        '''Create a tempoary password'''
         base = (
             random.sample(string.ascii_letters, k=4)
             + random.sample(string.digits, k=3)

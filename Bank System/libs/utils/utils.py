@@ -10,12 +10,14 @@ else:
 
 
 def clear(init_wait_time=0, final_wait_time=0):
+    '''Clean the terminal's screen'''
     time.sleep(float(init_wait_time))
     os.system("cls" if os.name == "nt" else "clear")
     time.sleep(float(final_wait_time))
 
 
 def is_valid_number(value):
+    '''Check's if a number is valid'''
     try:
         float(value)
         return True
@@ -24,6 +26,7 @@ def is_valid_number(value):
 
 
 def press_enter():
+    '''Prevent user from using/typing anything until the type enter'''
     if os.name == "nt":
         while True:
             if msvcrt.kbhit():
@@ -45,6 +48,7 @@ def press_enter():
 
 
 def is_negative_number(value):
+    '''Checks if a number is negative'''
     try:
         return float(value) < 0
     except ValueError:

@@ -67,6 +67,7 @@ def run_system(bank: Bank, login: str) -> int:
 
 
 def main():
+    '''Init the system'''
     bank = Bank(agency="0001")
     bank.registered_new_user(
         name="Vinicius Eduardo",

@@ -11,6 +11,8 @@ import os
 
 
 def get_downloads_path() -> str:
+    '''Find the correct path for the folder Download
+    If the folder do not exits, it creates one'''
     try:
         if platform.system() == "Windows":
             return os.path.join(os.path.expanduser("~"), "Downloads")
@@ -84,6 +86,7 @@ class Client:
         self.db_file = db_file
 
     def mk_deposit(self, amount: float) -> float:
+        '''Add a value to the user's balance'''
         self.balance += float(amount)
         operation_time = datetime.now().replace(microsecond=0)
         self._update_statement(
@@ -106,6 +109,7 @@ class Client:
     def mk_withdrawal(
         self, amount: float, protect_limit: int = 3
     ) -> tuple[float, bool]:
+        '''Take a value out of the user's balance'''
         if self.get_daily_withdrawal_cnt() >= protect_limit:
             return self.balance, False
         if float(amount) > self.balance:
@@ -141,6 +145,7 @@ class Client:
     def _update_statement(
         self, operation: str, value: float, operation_time: str
     ) -> None:
+        '''Update user's statement'''
         next_id = (
             max([int(op.split("_")[1]) for op in self.statement.keys()] + [-1]) + 1
         )
@@ -167,6 +172,7 @@ class Client:
             conn.close()
 
     def _print_statement(self, statement_path: str, balance: str) -> None:
+        '''Print the user's statement in the terminal'''
         try:
             with open(statement_path, "w") as writing:
                 writing.write("Your bank statement is as following:\n")
@@ -188,6 +194,7 @@ class Client:
             print(f"{RED}Error writing statement to file: {e}{DEFAULT}")
 
     def _is_to_print(self) -> tuple[bool, str]:
+        '''Ask if the user's want's to download/print the statement'''
         while True:
             try:
                 answer = input(
@@ -204,6 +211,7 @@ class Client:
                 print(RED, "Please, enter a valid value!", DEFAULT)
 
     def _handle_print_statement(self, name: str, date: str) -> str:
+        '''Create a statement file in the folder 'Download' with the statement'''
         if name and date:
             try:
                 file_name = mk_file_name(name, date.replace(" ", "_").replace(":", "-"))
@@ -223,6 +231,7 @@ class Client:
         return f"{RED}Error: Could not generate statement file.{DEFAULT}"
 
     def display_statement(self) -> None:
+        '''Print the user's statement in the terminal'''
         clear(2, 0)
         print(
             f"Your bank statement is as following:\n\n{PINK}On Time when operation happen -> Operation: Value{DEFAULT}"
@@ -249,6 +258,7 @@ class Client:
             print(ret)
 
     def handle_login(self, input_pin: str, max_attempts: int = 3) -> tuple[bool, str]:
+        '''Checks if the user's login credentials are correct'''
         try_nbr = 1
         check_pin = input_pin
         while try_nbr < max_attempts:
@@ -272,9 +282,11 @@ class Client:
         return False, "Too many attempts to login!"
 
     def get_daily_withdrawal_cnt(self) -> int:
+        '''Get what day the user is making the withdrawal'''
         current_date = datetime.now().strftime("%Y-%m-%d")
         return self.withdrawal_cnt.get(current_date, 0)
 
     def increment_withdrawal_cnt(self) -> None:
+        '''Update how many withdrawals the user made in that day'''
         current_date = datetime.now().strftime("%Y-%m-%d")
         self.withdrawal_cnt[current_date] = self.withdrawal_cnt.get(current_date, 0) + 1
