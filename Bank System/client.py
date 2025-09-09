@@ -153,7 +153,7 @@ class Client:
             return False, f"You can only send a amount lower than R${self.balance}!"
         if len(pix_key) == 11:
             try:
-                conn = sqlite3.connect(self.db_file) # db_file may not work
+                conn = sqlite3.connect(self.db_file)
                 cursor = conn.cursor()
                 cursor.execute("SELECT login, name, balance FROM clients WHERE cpf = ?", (pix_key,))
                 alian_login, alian_name, alian_balance = cursor.fetchone()
@@ -176,7 +176,29 @@ class Client:
             finally:
                 conn.close()
         elif len(pix_key) == 10:
-            pass
+            try:
+                conn = sqlite3.connect(self.db_file)
+                cursor = conn.cursor()
+                cursor.execute("SELECT login, name, balance FROM clients WHERE pix_key = ?", (pix_key,))
+                alian_login, alian_name, alian_balance = cursor.fetchone()
+                new_balance = alian_balance + amount
+                cursor.execute(
+                    "UPDATE clients SET balance = ? WHERE login = ?",
+                    (new_balance, alian_login)
+                )
+                conn.commit()
+                self._update_statement(
+                    operation="pix sent", value=amount, operator_name=self.name, receiver_name=alian_name, operation_time=str(operation_time)
+                )
+                self._update_somebody_statement(
+                    operation="pix received", value=amount, operator_name=self.name, receiver_name=alian_name, operation_time=str(operation_time), login=alian_login
+                )
+                formated_pix_amount = "{:.2f}".format(float(amount))
+                return True, f"{CYAN}You send R${formated_pix_amount} to {alian_name} using PIX!{DEFAULT}"
+            except Error as e:
+                return False, f"{RED}Error saving pix: {e}{DEFAULT}"
+            finally:
+                conn.close()
         else:
             return False, f"{RED}Pix key is not valid!{DEFAULT}"
 
@@ -211,7 +233,7 @@ class Client:
             )
             conn.commit()
         except Error:
-            print(RED, "Error saving statement: {e}", DEFAULT)
+            print(RED, "Error saving personal statement: {e}", DEFAULT)
         finally:
             conn.close()
 

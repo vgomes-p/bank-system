@@ -12,18 +12,27 @@ REGREEN			=	\033[1;7;32m
 REYELLOW		=	\033[1;7;33m
 
 
-main_cache_dir		=	__pycache__/
-bsu_cache_dir		=	libs/bank_system_utils/__pycache__/
-color_cache_dir		=	libs/color/__pycache__/
-utils_cache_dir		=	libs/utils/__pycache__/
+help:
+		@clear
+		@echo "$(YELLOW)help:$(DEFAULT) show all commands that the make for this project supports"
+		@echo "$(YELLOW)run:$(DEFAULT) run the project"
+		@echo "$(YELLOW)flake:$(DEFAULT) run flake8"
+		@echo "$(YELLOW)flake_ign:$(DEFAULT) run flake8 ignoring some errors"
+		@echo "$(YELLOW)clean:$(DEFAULT) delete all caches files and the database file"
 
 run:
 		@python3 main.py
 
+flake:
+		@clear
+		@flake8 --max-line-length 120
+
+flake_ign:
+		@clear
+		@flake8 --ignore=,W503,W504,F401
+
 clean:
-		@rm -rfd main_cache_dir
-		@rm -rfd bsu_cache_dir
-		@rm -rfd color_cache_dir
-		@rm -rfd utils_cache_dir
+		@clear
+		@find . -name "__pycache__" -type d -exec rm -rf {} +
 		@rm bank.db
 		@echo "$(GREEN) Program cleaned successfully! $(DEFAULT)"%  
