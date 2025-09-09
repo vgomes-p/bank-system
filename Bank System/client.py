@@ -57,6 +57,7 @@ class Client:
         birthday: str,
         account: str,
         pin: str,
+        pix_key: str,
         street: str,
         house_nbr: str,
         neighborhood: str,
@@ -70,6 +71,7 @@ class Client:
         self.birthday = birthday
         self.account = account
         self.pin = pin
+        self.pix_key = pix_key
         self.login = login
         self.balance = 0.0
         self.address = {
@@ -80,7 +82,7 @@ class Client:
             "state": state,
         }
         self.statement = {
-            "operation_0": {"Operation": "", "Value": "", "Operation_time": ""}
+            "operation_0": {"Operation": "", "Value": "", "Operator_name": "", "Receiver_name": "", "Operation_time": ""}
         }
         self.withdrawal_cnt = {}
         self.db_file = db_file
@@ -90,7 +92,7 @@ class Client:
         self.balance += float(amount)
         operation_time = datetime.now().replace(microsecond=0)
         self._update_statement(
-            operation="deposit", value=amount, operation_time=str(operation_time)
+            operation="deposit", value=amount, operator_name=self.name, receiver_name=self.name, operation_time=str(operation_time)
         )
         try:
             conn = sqlite3.connect(self.db_file)
@@ -117,7 +119,7 @@ class Client:
         self.balance -= float(amount)
         operation_time = datetime.now().replace(microsecond=0)
         self._update_statement(
-            operation="withdrawal", value=amount, operation_time=str(operation_time)
+            operation="withdrawal", value=amount, operator_name=self.name, receiver_name=self.name, operation_time=str(operation_time)
         )
         self.increment_withdrawal_cnt()
         try:
@@ -142,17 +144,59 @@ class Client:
             conn.close()
         return self.balance, True
 
+    def mk_pix(self, pix_key: str, amount) -> tuple[bool, str]:
+        personal_keys = [self.cpf, self.pix_key]
+        operation_time = datetime.now().replace(microsecond=0)
+        if pix_key in personal_keys:
+            return False, f"{RED}You cannot send pix to yourself!{DEFAULT}"
+        if amount > self.balance:
+            return False, f"You can only send a amount lower than R${self.balance}!"
+        if len(pix_key) == 11:
+            try:
+                conn = sqlite3.connect(self.db_file) # db_file may not work
+                cursor = conn.cursor()
+                cursor.execute("SELECT login, name, balance FROM clients WHERE cpf = ?", (pix_key,))
+                alian_login, alian_name, alian_balance = cursor.fetchone()
+                new_balance = alian_balance + amount
+                cursor.execute(
+                    "UPDATE clients SET balance = ? WHERE login = ?",
+                    (new_balance, alian_login)
+                )
+                conn.commit()
+                self._update_statement(
+                    operation="pix sent", value=amount, operator_name=self.name, receiver_name=alian_name, operation_time=str(operation_time)
+                )
+                self._update_somebody_statement(
+                    operation="pix received", value=amount, operator_name=self.name, receiver_name=alian_name, operation_time=str(operation_time), login=alian_login
+                )
+                formated_pix_amount = "{:.2f}".format(float(amount))
+                return True, f"{CYAN}You send R${formated_pix_amount} to {alian_name} using PIX!{DEFAULT}"
+            except Error as e:
+                return False, f"{RED}Error saving pix: {e}{DEFAULT}"
+            finally:
+                conn.close()
+        elif len(pix_key) == 10:
+            pass
+        else:
+            return False, f"{RED}Pix key is not valid!{DEFAULT}"
+
     def _update_statement(
-        self, operation: str, value: float, operation_time: str
+        self, operation: str, value: float, operator_name: str, receiver_name: str, operation_time: str
     ) -> None:
         '''Update user's statement'''
         next_id = (
             max([int(op.split("_")[1]) for op in self.statement.keys()] + [-1]) + 1
         )
         op_id = f"operation_{next_id}"
+        op_all_name = operator_name.split(" ")
+        op_name = f"{op_all_name[0]} {op_all_name[-1]}"
+        re_all_name = receiver_name.split(" ")
+        re_name = f"{re_all_name[0]} {re_all_name[-1]}"
         self.statement[op_id] = {
             "Operation": operation,
             "Value": value,
+            "Operator_name": op_name,
+            "Receiver_name": re_name,
             "Operation_time": operation_time,
         }
         try:
@@ -160,14 +204,45 @@ class Client:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO statements (login, operation_id, operation, value, operation_time)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO statements (login, operation_id, operation, value, operator_name, receiver_name, operation_time)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-                (self.login, op_id, operation, value, operation_time),
+                (self.login, op_id, operation, value, op_name, re_name, operation_time),
             )
             conn.commit()
         except Error:
             print(RED, "Error saving statement: {e}", DEFAULT)
+        finally:
+            conn.close()
+
+    def _update_somebody_statement(
+        self, operation: str, value: float, operator_name, receiver_name: str, operation_time: str, login: str
+    ) -> None:
+        '''Update user's statement'''
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+        cursor.execute("SELECT operation_id FROM statements WHERE login = ? ORDER BY operation_id DESC LIMIT 1", (login,))
+        last_id = cursor.fetchone()
+        next_id = int(last_id[0].split("_")[1]) + 1 if last_id else 1
+        op_id = f"operation_{next_id}"
+        op_id = f"operation_{next_id}"
+        op_all_name = operator_name.split(" ")
+        op_name = f"{op_all_name[0]} {op_all_name[-1]}"
+        re_all_name = receiver_name.split(" ")
+        re_name = f"{re_all_name[0]} {re_all_name[-1]}"
+        try:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO statements (login, operation_id, operation, value, operator_name, receiver_name, operation_time)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+                (login, op_id, operation, value, op_name, re_name, operation_time),
+            )
+            conn.commit()
+        except Error:
+            print(RED, "Error saving alian statement: {e}", DEFAULT)
         finally:
             conn.close()
 
@@ -178,17 +253,23 @@ class Client:
                 writing.write("Your bank statement is as following:\n")
                 writing.write("\nOn Time when operation happen -> Operation: Value\n")
                 for op_data in self.statement.values():
-                    op, val, op_time = (
+                    op, val, operator_name, receiver_name, op_time = (
                         op_data["Operation"],
                         op_data["Value"],
+                        op_data["Operator_name"],
+                        op_data["Receiver_name"],
                         op_data["Operation_time"],
                     )
                     if op:
-                        op_display = op.capitalize()
                         formatted_val = "{:.2f}".format(float(val))
-                        writing.write(
-                            f"You made a {op_display} of R${formatted_val} on {op_time}.\n"
-                        )
+                        if op == "deposit":
+                            writing.write(f"You made a deposit of R${formatted_val} on {op_time}.\n")
+                        elif op == "withdrawal":
+                            writing.write(f"You made a deposit of R${formatted_val} on {op_time}.\n")
+                        elif op == "pix received":
+                            writing.write(f"You received a pix of R${formatted_val} from {operator_name} on {op_time}.\n")
+                        elif op == "pix sent":
+                            writing.write(f"You sent a pix of R${formatted_val} to {receiver_name} on {op_time}.\n")
                 writing.write(f"\nYour current balance is: R${balance}!")
         except IOError as e:
             print(f"{RED}Error writing statement to file: {e}{DEFAULT}")
@@ -237,18 +318,26 @@ class Client:
             f"Your bank statement is as following:\n\n{PINK}On Time when operation happen -> Operation: Value{DEFAULT}"
         )
         for op_data in self.statement.values():
-            op, val, op_time = (
+            # print(f"{YLOW}DEBUG:{DEFAULT} {op_data.keys()})
+            op, val, operator_name, receiver_name, op_time = (
                 op_data["Operation"],
                 op_data["Value"],
+                op_data["Operator_name"],
+                op_data["Receiver_name"],
                 op_data["Operation_time"],
             )
             if op:
-                op_display = op.capitalize()
-                color = GREEN if op == "deposit" else RED
+                display_message = ""
                 formatted_val = "{:.2f}".format(float(val))
-                print(
-                    f"You made a {color}{op_display}{DEFAULT} of {YLOW}R${formatted_val}{DEFAULT} on {CYAN}{op_time}{DEFAULT}."
-                )
+                if op == "deposit":
+                    display_message = f"You made a {GREEN}deposit{DEFAULT} of {YLOW}R${formatted_val}{DEFAULT} on {CYAN}{op_time}{DEFAULT}."
+                elif op == "withdrawal":
+                    display_message = f"You made a {RED}deposit{DEFAULT} of {YLOW}R${formatted_val}{DEFAULT} on {CYAN}{op_time}{DEFAULT}."
+                elif op == "pix received":
+                    display_message = f"You {GREEN}received a pix{DEFAULT} of {YLOW}R${formatted_val}{DEFAULT} from {PINK}{operator_name}{DEFAULT} on {CYAN}{op_time}{DEFAULT}."
+                elif op == "pix sent":
+                    display_message = f"You {RED}sent a pix{DEFAULT} of {YLOW}R${formatted_val}{DEFAULT} to {PINK}{receiver_name}{DEFAULT} on {CYAN}{op_time}{DEFAULT}."
+                print(display_message)
         formatted_balance = "{:.2f}".format(self.balance)
         print(f"\nYour current balance is: {YLOW}R${formatted_balance}{DEFAULT}!")
         ret, name = self._is_to_print()

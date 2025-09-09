@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from bank import Bank
-from operations import handle_deposit, handle_withdrawal
+from operations import handle_deposit, handle_withdrawal, handle_pix
 from libs.bank_system_utils import get_credentials, get_new_user_credentials
 from libs.color import RED, GREEN, YLOW, CYAN, DEFAULT
 from libs.utils import clear, press_enter
@@ -12,9 +12,10 @@ valid_operations = {
     "0": "Balance",
     "1": "Deposit",
     "2": "Withdrawal",
-    "3": "Statement",
-    "4": "exit account",
-    "5": "finish session",
+    "3": "Pix",
+    "4": "Statement",
+    "5": "exit account",
+    "6": "finish session",
 }
 
 is_yes = ["y", "yes", "1"]
@@ -26,9 +27,10 @@ def pick_operation() -> str:
     print("0: Check balance")
     print("1: Make a deposit")
     print("2: Withdrawal a value")
-    print("3: Get bank statement")
-    print("4: Exit account")
-    print("5: Finish session")
+    print("3: Pix")
+    print("4: Get bank statement")
+    print("5: Exit account")
+    print("6: Finish session")
     return input("Type an option:\n>>> ").strip()
 
 
@@ -43,11 +45,11 @@ def run_system(bank: Bank, login: str) -> int:
         if operation not in valid_operations:
             print(RED, "Invalid option. Try again!", DEFAULT)
             continue
-        if operation == "4":
+        if operation == "5":
             clear(0, 0)
             print("See you soon!")
             return 0
-        elif operation == "5":
+        elif operation == "6":
             clear(0, 3)
             print("Finishing program...")
             return 1
@@ -62,6 +64,9 @@ def run_system(bank: Bank, login: str) -> int:
             clear(0, 0)
             client.balance = handle_withdrawal(client)
         elif operation == "3":
+            clear(0, 0)
+            client.balance = handle_pix(client)
+        elif operation == "4":
             clear(0, 0)
             client.display_statement()
 
@@ -80,6 +85,20 @@ def main():
         state="NO",
         login="vinny",
         pin="access777",
+        pix_key="1234567890"
+    )
+    bank.registered_new_user(
+        name="Samuel Lacerda Osasco",
+        cpf="23456789011",
+        birthday="23/04/2005",
+        street="none",
+        house_nbr="none",
+        neighborhood="none",
+        city="none",
+        state="NO",
+        login="samuca",
+        pin="access777",
+        pix_key="2345678901"
     )
     print(GREEN, "Welcome to the bank system", DEFAULT)
     tm.sleep(0.5)

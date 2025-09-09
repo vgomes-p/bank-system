@@ -28,6 +28,7 @@ class Bank:
                     birthday TEXT NOT NULL,
                     account TEXT NOT NULL UNIQUE,
                     pin TEXT NOT NULL,
+                    pix_key TEXT NOT NULL,
                     balance REAL NOT NULL,
                     street TEXT NOT NULL,
                     house_nbr TEXT NOT NULL,
@@ -55,6 +56,8 @@ class Bank:
                     operation_id TEXT NOT NULL,
                     operation TEXT NOT NULL,
                     value REAL NOT NULL,
+                    operator_name TEXT NOT NULL,
+                    receiver_name TEXT NOT NULL,
                     operation_time TEXT NOT NULL,
                     PRIMARY KEY (login, operation_id),
                     FOREIGN KEY (login) REFERENCES clients(login)
@@ -89,6 +92,7 @@ class Bank:
                     birthday,
                     account,
                     pin,
+                    pix_key,
                     balance,
                     street,
                     house_nbr,
@@ -102,6 +106,7 @@ class Bank:
                     birthday=birthday,
                     account=account,
                     pin=pin,
+                    pix_key=pix_key,
                     street=street,
                     house_nbr=house_nbr,
                     neighborhood=neighborhood,
@@ -111,14 +116,16 @@ class Bank:
                     db_file=self.db_file,
                 )
                 cursor.execute(
-                    "SELECT operation_id, operation, value, operation_time FROM statements WHERE login = ?",
+                    "SELECT operation_id, operation, value, operator_name, receiver_name, operation_time FROM statements WHERE login = ?",
                     (login,),
                 )
                 client.statement = {
                     row[0]: {
                         "Operation": row[1],
                         "Value": row[2],
-                        "Operation_time": row[3],
+                        "Operator_name": row[3],
+                        "Receiver_name": row[4],
+                        "Operation_time": row[5],
                     }
                     for row in cursor.fetchall()
                 }
@@ -148,6 +155,7 @@ class Bank:
         state: str,
         login: str,
         pin: str = "no_pin",
+        pix_key: str = "no_pix_key",
     ) -> tuple[bool, str]:
         '''Checks if new user's credential are valid, if so, register them in the data base'''
         if self.is_cpf_registered(cpf):
@@ -169,12 +177,15 @@ class Bank:
             conn.close()
         if pin == "no_pin":
             pin = self._mk_pin()
+        if pix_key == "no_pix_key":
+            pix_key = self._mk_pix_key()
         client = Client(
             name=name,
             cpf=cpf,
             birthday=birthday,
             account=next_account,
             pin=pin,
+            pix_key=pix_key,
             street=street,
             house_nbr=house_nbr,
             neighborhood=neighborhood,
@@ -189,8 +200,8 @@ class Bank:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO clients (login, name, cpf, birthday, account, pin, balance, street, house_nbr, neighborhood, city, state)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO clients (login, name, cpf, birthday, account, pin, pix_key, balance, street, house_nbr, neighborhood, city, state)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
                 (
                     login,
@@ -199,6 +210,7 @@ class Bank:
                     birthday,
                     next_account,
                     pin,
+                    pix_key,
                     0.0,
                     street,
                     house_nbr,
@@ -251,3 +263,11 @@ class Bank:
         )
         random.shuffle(base)
         return "".join(base)
+
+    def _mk_pix_key(self) -> str:
+        pix_key = (
+            random.sample(string.ascii_letters, k=5)
+            + random.sample(string.digits, k=5)
+        )
+        random.shuffle(pix_key)
+        return "".join(pix_key)

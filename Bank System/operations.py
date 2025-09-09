@@ -1,3 +1,4 @@
+from email import message
 from client import Client
 from libs.color import RED, PINK, CYAN, YLOW, DEFAULT
 from libs.utils import clear, is_valid_number, is_negative_number
@@ -65,3 +66,28 @@ def handle_withdrawal(client: Client) -> float:
             RED, f"Error: {PINK}{withdrawal_value}{RED} is not a valid number", DEFAULT
         )
     return client.balance
+
+def handle_pix(client: Client) -> None:
+    pix_key = input("Type the pix key: ").strip()
+    pix = input("Type a value to pix: ").strip()
+    clear(2, 0)
+    if is_negative_number(pix):
+        print(
+            RED,
+            "Error: negative number is not allowed, just type a number without signal",
+            DEFAULT,
+        )
+    elif is_valid_number(pix):
+        formated_pix_amount = "{:.2f}".format(float(pix))
+        ret, message = client.mk_pix(pix_key=pix_key, amount=float(pix))
+        if ret:
+            print(message)
+        else:
+            print(message)
+    else:
+        formated_pix_amount = "{:.2f}".format(float(pix))
+        print(
+            RED, f"Error: R${PINK}{formated_pix_amount}{RED} is not a valid number", DEFAULT
+        )
+    return client.balance
+
