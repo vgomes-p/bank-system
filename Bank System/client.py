@@ -162,7 +162,10 @@ class Client:
                     "UPDATE clients SET balance = ? WHERE login = ?",
                     (new_balance, alian_login)
                 )
+                personal_new_balance = self.balance - amount
+                cursor.execute("UPDATE clients SET balance = ? WHERE login = ?", (personal_new_balance, self.login))
                 conn.commit()
+                self.balance -= amount
                 self._update_statement(
                     operation="pix sent", value=amount, operator_name=self.name, receiver_name=alian_name, operation_time=str(operation_time)
                 )
@@ -186,7 +189,10 @@ class Client:
                     "UPDATE clients SET balance = ? WHERE login = ?",
                     (new_balance, alian_login)
                 )
+                personal_new_balance = self.balance - amount
+                cursor.execute("UPDATE clients SET balance = ? WHERE login = ?", (personal_new_balance, self.login))
                 conn.commit()
+                self.balance -= amount
                 self._update_statement(
                     operation="pix sent", value=amount, operator_name=self.name, receiver_name=alian_name, operation_time=str(operation_time)
                 )

@@ -143,6 +143,10 @@ class Bank:
         finally:
             conn.close()
 
+    def reload_clients(self):
+        self._load_clients()
+
+
     def registered_new_user(
         self,
         name: str,
@@ -227,7 +231,7 @@ class Bank:
             conn.close()
         return (
             True,
-            f"User {name} registered successfully with login {YLOW}'{login}'{DEFAULT}, account {YLOW}{next_account}{DEFAULT}, and initial access pin {YLOW}{pin}{DEFAULT}",
+            f"{DEFAULT}User {name} registered successfully with login {YLOW}'{login}'{DEFAULT}, account {YLOW}{next_account}{DEFAULT}, and initial access pin {YLOW}{pin}{DEFAULT}\nYour pix key is {YLOW}{pix_key}{DEFAULT}!",
         )
 
     def is_cpf_registered(self, cpf: str) -> bool:

@@ -48,6 +48,7 @@ def run_system(bank: Bank, login: str) -> int:
         if operation == "5":
             clear(0, 0)
             print("See you soon!")
+            bank.reload_clients()
             return 0
         elif operation == "6":
             clear(0, 3)
