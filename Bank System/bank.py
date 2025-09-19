@@ -146,7 +146,6 @@ class Bank:
     def reload_clients(self):
         self._load_clients()
 
-
     def registered_new_user(
         self,
         name: str,
@@ -242,20 +241,12 @@ class Bank:
         '''Checks is a login already belongs to one account in the system'''
         return login in self.clients
 
-    def account_exists(
-        self, agency: str, login: str, account: str, cpf: str
-    ) -> tuple[bool, str]:
+    def account_exists(self, login: str,) -> tuple[bool, str]:
         '''Checks is an account already exist'''
-        if self.agency != agency:
-            return False, f"Agency '{agency}' not found!"
         logins = self._get_login_list()
         if login not in logins:
             return False, f"Client for the login '{login}' not found!"
         client = self.clients[login]
-        if account != client.account:
-            return False, f"The account '{account}' does not belong to {client.name}!"
-        if cpf != client.cpf:
-            return False, f"Invalid CPF for {client.name}'s account!"
         return True, client.name
 
     def _mk_pin(self) -> str:

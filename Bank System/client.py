@@ -239,7 +239,7 @@ class Client:
             )
             conn.commit()
         except Error:
-            print(RED, "Error saving personal statement: {e}", DEFAULT)
+            print(f"{RED}Error saving personal statement: {e}{DEFAULT}")
         finally:
             conn.close()
 
@@ -270,7 +270,7 @@ class Client:
             )
             conn.commit()
         except Error:
-            print(RED, "Error saving alian statement: {e}", DEFAULT)
+            print(f"{RED}Error saving alian statement{DEFAULT}")
         finally:
             conn.close()
 
@@ -310,14 +310,14 @@ class Client:
                     "Do you want to print this statement?\n[Please, answer 'y' for yes and 'n' for no]\n>>> "
                 )
                 if answer not in ["y", "n"]:
-                    print(YLOW, "Please, answer as requested!", DEFAULT)
+                    print(f"{YLOW}Please, answer as requested!{DEFAULT}")
                     continue
                 if answer == "n":
                     return False, ""
                 name = self.name.split(" ")
                 return True, name[0]
             except ValueError:
-                print(RED, "Please, enter a valid value!", DEFAULT)
+                print(f"{RED}Please, enter a valid value!{DEFAULT}")
 
     def _handle_print_statement(self, name: str, date: str) -> str:
         '''Create a statement file in the folder 'Download' with the statement'''
@@ -383,15 +383,9 @@ class Client:
                 return True, ""
             clear(1, 0)
             if try_nbr == max_attempts - 1:
-                print(
-                    RED,
-                    "Wrong password, please, try again!\n",
-                    YLOW,
-                    "[note: this is your last try for today]",
-                    DEFAULT,
-                )
+                print(f"{RED}Wrong password, please, try again!\n{YLOW}[note: this is your last try for today]{DEFAULT}")
             else:
-                print(RED, "Wrong password, please, try again!", DEFAULT)
+                print(f"{RED}Wrong password, please, try again!{DEFAULT}")
             check_pin = getpass.getpass("Enter your password: ")
             try_nbr += 1
         if check_pin == self.pin:

@@ -1,17 +1,6 @@
 from libs.color import RED, DEFAULT
 
 
-def get_credentials() -> tuple[str, str, str, str]:
-    '''Collect users credential data'''
-    print("Please, enter your access informations:")
-    agency = input("Agency: ")
-    login = input("Access login: ")
-    account = input("Account number: ")
-    cpf_nbr = input("CPF number: ").replace(".", "").replace("-", "")
-    # agency, login, account, cpf_nbr = "0001", "vinny", "1", "12345678900" #FOR DEBUG
-    return str(agency), str(login), str(account), str(cpf_nbr)
-
-
 def mk_login(name: str, cpf: str, state: str) -> str:
     '''Create a login using user's data'''
     if not (name and cpf and state):
@@ -71,7 +60,7 @@ def get_new_user_credentials() -> (
             )
             continue
         if not is_date_valid(birthday):
-            print(RED, "Invalid date format! Use DD/MM/YYYY.", DEFAULT)
+            print(f"{RED}Invalid date format! Use DD/MM/YYYY.{DEFAULT}")
             continue
         login = mk_login(name=name, cpf=cpf, state=state)
         if login:

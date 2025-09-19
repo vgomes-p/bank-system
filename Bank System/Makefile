@@ -25,14 +25,14 @@ run:
 
 flake:
 		@clear
-		@flake8 --max-line-length 120
+		@flake8 --max-line-length 150
 
 flake_ign:
 		@clear
-		@flake8 --ignore=,W503,W504,F401
+		@flake8 --ignore=,W503,W504,F401,E501
 
 clean:
 		@clear
 		@find . -name "__pycache__" -type d -exec rm -rf {} +
 		@rm bank.db
-		@echo "$(GREEN) Program cleaned successfully! $(DEFAULT)"%  
+		@echo "$(GREEN)Program cleaned successfully!$(DEFAULT)"

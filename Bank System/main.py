@@ -2,7 +2,7 @@
 
 from bank import Bank
 from operations import handle_deposit, handle_withdrawal, handle_pix
-from libs.bank_system_utils import get_credentials, get_new_user_credentials
+from libs.bank_system_utils import get_new_user_credentials
 from libs.color import RED, GREEN, YLOW, CYAN, DEFAULT
 from libs.utils import clear, press_enter
 import time as tm
@@ -43,7 +43,7 @@ def run_system(bank: Bank, login: str) -> int:
         clear(0, 0)
         operation = pick_operation()
         if operation not in valid_operations:
-            print(RED, "Invalid option. Try again!", DEFAULT)
+            print(f"{RED}Invalid option. Try again!{DEFAULT}")
             continue
         if operation == "5":
             clear(0, 0)
@@ -101,15 +101,13 @@ def main():
         pin="access777",
         pix_key="2345678901"
     )
-    print(GREEN, "Welcome to the bank system", DEFAULT)
+    print(f"{GREEN}Welcome to the bank system{DEFAULT}")
     tm.sleep(0.5)
     sigfinish = 0
     while sigfinish == 0:
-        agency, login, account, cpf_nbr = get_credentials()
-        is_valid, ret = bank.account_exists(
-            agency=agency, login=login, account=account, cpf=cpf_nbr
-        )
-        clear(2, 0)
+        login = input("Access login: ")
+        is_valid, ret = bank.account_exists(login=login)
+        tm.sleep(2)
         if is_valid:
             client = bank.clients[login]
             pin = getpass.getpass("Enter your password: ")
@@ -122,10 +120,10 @@ def main():
                 sigfinish = run_system(bank=bank, login=login)
             else:
                 clear(2, 0)
-                print(RED, ret, DEFAULT)
+                print(f"{RED}{ret}{DEFAULT}")
                 continue
         else:
-            print(YLOW, ret, DEFAULT, end=" ")
+            print(f"{YLOW}{ret}{DEFAULT}", end=" ")
             print("Would you like to create a new account?")
             if (
                 input(
@@ -165,7 +163,9 @@ def main():
                         tm.sleep(2)
                         sigfinish = run_system(bank=bank, login=new_login)
                 else:
-                    print(RED, name, DEFAULT)
+                    print(f"{RED}{name}{DEFAULT}")
+            else:
+                clear(2, 0)
     clear(2, 0)
 
 
