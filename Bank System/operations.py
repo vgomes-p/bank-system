@@ -5,7 +5,10 @@ from libs.utils import clear, is_valid_number, is_negative_number
 
 def handle_deposit(client: Client) -> float:
     '''Receive and check is the value that the user's wants to deposit is valid'''
-    deposit = input("Type a value to deposit: ").strip().replace(",", ".")
+    deposit = input("Type a value to deposit: ").strip()
+    if "," in deposit:
+        deposit = deposit.replace(",", ".")
+    deposit = "{:.2f}".format(float(deposit))
     clear(2, 0)
     real, cents = str(deposit).split(".")
     if len(cents) > 2:
@@ -30,7 +33,10 @@ def handle_withdrawal(client: Client) -> float:
         clear(0, 1.5)
         print(f"{PINK}Sorry, you cannot make more withdrawals today!{DEFAULT}")
         return client.balance
-    withdrawal_value = input("Type a value to withdrawal: ").strip().replace(",", ".")
+    withdrawal_value = input("Type a value to withdrawal: ").strip()
+    if "," in withdrawal_value:
+        withdrawal_value = withdrawal_value.replace(",", ".")
+    withdrawal_value = "{:.2f}".format(float(withdrawal_value))
     real, cents = str(withdrawal_value).split(".")
     if len(cents) > 2:
         print(f"{RED}Error: three-decimals (or more) entry is not acceptable{DEFAULT}")
@@ -59,7 +65,10 @@ def handle_withdrawal(client: Client) -> float:
 
 def handle_pix(client: Client) -> None:
     pix_key = input("Type the pix key: ").strip()
-    pix = input("Type a value to pix: ").strip().replace(",", ".")
+    pix = input("Type a value to pix: ").strip()
+    if "," in pix:
+        pix = pix.replace(",", ".")
+    pix = "{:.2f}".format(float(pix))
     real, cents = str(pix).split(".")
     if len(cents) > 2:
         print(f"{RED}Error: three-decimals (or more) entry is not acceptable{DEFAULT}")
