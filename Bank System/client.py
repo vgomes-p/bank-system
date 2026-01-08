@@ -89,11 +89,9 @@ class Client:
 
     def mk_deposit(self, amount: float) -> float:
         '''Add a value to the user's balance'''
+        old_balance = self.balance
         self.balance += float(amount)
         operation_time = datetime.now().replace(microsecond=0)
-        self._update_statement(
-            operation="deposit", value=amount, operator_name=self.name, receiver_name=self.name, operation_time=str(operation_time)
-        )
         try:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
@@ -103,8 +101,12 @@ class Client:
             )
             conn.commit()
         except Error as e:
+            self.balance = old_balance
             print(f"{RED}Error saving deposit: {e}{DEFAULT}")
         finally:
+            self._update_statement(
+                operation="deposit", value=amount, operator_name=self.name, receiver_name=self.name, operation_time=str(operation_time)
+            )
             conn.close()
         return self.balance
 
@@ -116,12 +118,9 @@ class Client:
             return self.balance, False
         if float(amount) > self.balance:
             return self.balance, False
+        old_balance = self.balance
         self.balance -= float(amount)
         operation_time = datetime.now().replace(microsecond=0)
-        self._update_statement(
-            operation="withdrawal", value=amount, operator_name=self.name, receiver_name=self.name, operation_time=str(operation_time)
-        )
-        self.increment_withdrawal_cnt()
         try:
             conn = sqlite3.connect(self.db_file)
             cursor = conn.cursor()
@@ -139,8 +138,13 @@ class Client:
             )
             conn.commit()
         except Error as e:
+            self.balance = old_balance
             print(f"{RED}Error saving withdrawal: {e}{DEFAULT}")
         finally:
+            self._update_statement(
+                operation="withdrawal", value=amount, operator_name=self.name, receiver_name=self.name, operation_time=str(operation_time)
+            )
+            self.increment_withdrawal_cnt()
             conn.close()
         return self.balance, True
 
@@ -169,7 +173,7 @@ class Client:
                 self._update_statement(
                     operation="pix sent", value=amount, operator_name=self.name, receiver_name=alian_name, operation_time=str(operation_time)
                 )
-                self._update_somebody_statement(
+                self._update_alian_statement(
                     operation="pix received", value=amount, operator_name=self.name, receiver_name=alian_name, operation_time=str(operation_time), login=alian_login
                 )
                 formated_pix_amount = "{:.2f}".format(float(amount))
@@ -196,7 +200,7 @@ class Client:
                 self._update_statement(
                     operation="pix sent", value=amount, operator_name=self.name, receiver_name=alian_name, operation_time=str(operation_time)
                 )
-                self._update_somebody_statement(
+                self._update_alian_statement(
                     operation="pix received", value=amount, operator_name=self.name, receiver_name=alian_name, operation_time=str(operation_time), login=alian_login
                 )
                 formated_pix_amount = "{:.2f}".format(float(amount))
@@ -243,7 +247,7 @@ class Client:
         finally:
             conn.close()
 
-    def _update_somebody_statement(
+    def _update_alian_statement(
         self, operation: str, value: float, operator_name, receiver_name: str, operation_time: str, login: str
     ) -> None:
         '''Update user's statement'''

@@ -11,6 +11,7 @@ def handle_deposit(client: Client) -> float:
     deposit = "{:.2f}".format(float(deposit))
     clear(2, 0)
     real, cents = str(deposit).split(".")
+    del(real)
     if len(cents) > 2:
         print(f"{RED}Error: three-decimals (or more) entry is not acceptable{DEFAULT}")
         return client.balance
@@ -38,6 +39,7 @@ def handle_withdrawal(client: Client) -> float:
         withdrawal_value = withdrawal_value.replace(",", ".")
     withdrawal_value = "{:.2f}".format(float(withdrawal_value))
     real, cents = str(withdrawal_value).split(".")
+    del(real)
     if len(cents) > 2:
         print(f"{RED}Error: three-decimals (or more) entry is not acceptable{DEFAULT}")
         return client.balance
@@ -47,6 +49,7 @@ def handle_withdrawal(client: Client) -> float:
         return client.balance
     elif is_valid_number(withdrawal_value):
         nw_balance, success = client.mk_withdrawal(withdrawal_value)
+        del(nw_balance)
         if not success:
             formatted_balance = "{:.2f}".format(client.balance)
             print(f"{RED}You cannot withdrawal a value equal or bigger than R${formatted_balance}!{DEFAULT}")
@@ -70,6 +73,7 @@ def handle_pix(client: Client) -> None:
         pix = pix.replace(",", ".")
     pix = "{:.2f}".format(float(pix))
     real, cents = str(pix).split(".")
+    del(real)
     if len(cents) > 2:
         print(f"{RED}Error: three-decimals (or more) entry is not acceptable{DEFAULT}")
         return client.balance
