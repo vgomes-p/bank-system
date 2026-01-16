@@ -1,11 +1,28 @@
+from curses.ascii import isalnum, isalpha
 from client import Client
-from libs.color import RED, PINK, CYAN, YLOW, DEFAULT
-from libs.utils import clear, is_valid_number, is_negative_number
+from libs.color import RED, GREEN, PINK, CYAN, YLOW, DEFAULT
+from libs.utils import clear, is_valid_number, is_negative_number, there_is_punct, there_is_alpha
+
+
+def handle_int_input(message: str=""):
+    while True:
+        entry = input(message)
+        if not entry:
+            print("You have to entry something!")
+            continue
+        if there_is_alpha(entry):
+            print("You entry cannot have letter!")
+            continue
+        if there_is_punct(entry, ['.', ',']):
+            print("You entry cannot have letter!")
+            continue
+        else:
+            return entry
 
 
 def handle_deposit(client: Client) -> float:
     '''Receive and check is the value that the user's wants to deposit is valid'''
-    deposit = input("Type a value to deposit: ").strip()
+    deposit = handle_int_input("Type a value to deposit: ").strip()
     if "," in deposit:
         deposit = deposit.replace(",", ".")
     deposit = "{:.2f}".format(float(deposit))
@@ -34,7 +51,7 @@ def handle_withdrawal(client: Client) -> float:
         clear(0, 1.5)
         print(f"{PINK}Sorry, you cannot make more withdrawals today!{DEFAULT}")
         return client.balance
-    withdrawal_value = input("Type a value to withdrawal: ").strip()
+    withdrawal_value = handle_int_input("Type a value to withdrawal: ").strip()
     if "," in withdrawal_value:
         withdrawal_value = withdrawal_value.replace(",", ".")
     withdrawal_value = "{:.2f}".format(float(withdrawal_value))
@@ -67,8 +84,8 @@ def handle_withdrawal(client: Client) -> float:
 
 
 def handle_pix(client: Client) -> None:
-    pix_key = input("Type the pix key: ").strip()
-    pix = input("Type a value to pix: ").strip()
+    pix_key = handle_int_input("Type the pix key: ").strip()
+    pix = handle_int_input("Type a value to pix: ").strip()
     if "," in pix:
         pix = pix.replace(",", ".")
     pix = "{:.2f}".format(float(pix))

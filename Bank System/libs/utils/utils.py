@@ -9,6 +9,39 @@ else:
     import tty
 
 
+def there_is_punct(text, except_for: list=None) -> bool:
+    punct = ['!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.',
+            '/', ':', ';' '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`',
+            '{', '|', '}', '~']
+    if except_for:
+        for rem in except_for:
+            punct.remove(rem)
+    for c in text:
+        if c in punct:
+            return True
+        else:
+            pass
+    return False
+
+def there_is_alpha(text) -> bool:
+    for c in text:
+        if str(c).isalpha():
+            return True
+        else:
+            pass
+    return False
+
+def is_punct(text) -> bool:
+    punct = ['!', '"', '#', '$', '%', '&', "'", '(', ')', '*', '+', ',', '-', '.',
+            '/', ':', ';' '<', '=', '>', '?', '@', '[', '\\', ']', '^', '_', '`',
+            '{', '|', '}', '~']
+    for c in text:
+        if c not in punct:
+            return False
+        else:
+            pass
+    return True
+
 def clear(init_wait_time=0, final_wait_time=0):
     '''Clean the terminal's screen'''
     time.sleep(float(init_wait_time))

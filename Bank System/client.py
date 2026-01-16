@@ -87,6 +87,24 @@ class Client:
         self.withdrawal_cnt = {}
         self.db_file = db_file
 
+
+    def handle_alert(self, value: float, trigger_value: float, operation: str) -> bool:
+        if value >= trigger_value:
+            print(f"{RED}ATTENTION!!!{YLOW}\nWe flagged this {operation} operation as suspect. Are you sure you want to proceed?\n{DEFAULT}")
+            user_choice = input(f"{CYAN}Write {GREEN}'YES'{CYAN} to proceed and {RED}'NO'{CYAN} to abort the operation.{DEFAULT}\n-> ")
+            if user_choice.lower() == "yes":
+                clear()
+                return True
+            if user_choice.lower() == "no":
+                clear()
+                return False
+            else:
+                clear()
+                print(f"{RED}Answer not valid, aborting the operation...")
+                clear(0, 3)
+                return False
+        return True
+
     def mk_deposit(self, amount: float) -> float:
         '''Add a value to the user's balance'''
         old_balance = self.balance
@@ -109,6 +127,7 @@ class Client:
             )
             conn.close()
         return self.balance
+
 
     def mk_withdrawal(
         self, amount: float, protect_limit: int = 3
@@ -148,6 +167,20 @@ class Client:
             conn.close()
         return self.balance, True
 
+
+    def check_alian_account(self, pix_key: str) -> bool:
+        conn = sqlite3.connect(self.db_file)
+        cursor = conn.cursor()
+        if pix_key == 11:
+            cursor.execute("SELECT name FROM clients WHERE cpf = ?", (pix_key, ))
+        if pix_key == 10:
+            cursor.execute("SELECT name FROM clients WHERE pix_key = ?", (pix_key, ))
+        check = cursor.fetchone()
+        if check:
+            return True
+        return False
+
+
     def mk_pix(self, pix_key: str, amount) -> tuple[bool, str]:
         personal_keys = [self.cpf, self.pix_key]
         operation_time = datetime.now().replace(microsecond=0)
@@ -155,12 +188,21 @@ class Client:
             return False, f"{RED}You cannot send pix to yourself!{DEFAULT}"
         if amount > self.balance:
             return False, f"You can only send a amount lower than R${self.balance}!"
-        if len(pix_key) == 11:
+        alian_exist = self.check_alian_account(pix_key=pix_key)
+        if not alian_exist:
+            return False, f"{YLOW}There is no client with this pix key!{DEFAULT}"
+        alert = self.handle_alert(amount, 3000, "pix")
+        if alert:
+            conn = sqlite3.connect(self.db_file)
+            cursor = conn.cursor()
             try:
-                conn = sqlite3.connect(self.db_file)
-                cursor = conn.cursor()
-                cursor.execute("SELECT login, name, balance FROM clients WHERE cpf = ?", (pix_key,))
-                alian_login, alian_name, alian_balance = cursor.fetchone()
+                alian_login, alian_name, alian_balance = "", "", 0.0
+                if len(pix_key) == 11:
+                    cursor.execute("SELECT login, name, balance FROM clients WHERE cpf = ?", (pix_key,))
+                    alian_login, alian_name, alian_balance = cursor.fetchone()
+                elif len(pix_key) == 10:
+                    cursor.execute("SELECT login, name, balance FROM clients WHERE pix_key = ?", (pix_key,))
+                    alian_login, alian_name, alian_balance = cursor.fetchone()
                 new_balance = alian_balance + amount
                 cursor.execute(
                     "UPDATE clients SET balance = ? WHERE login = ?",
@@ -182,35 +224,11 @@ class Client:
                 return False, f"{RED}Error saving pix: {e}{DEFAULT}"
             finally:
                 conn.close()
-        elif len(pix_key) == 10:
-            try:
-                conn = sqlite3.connect(self.db_file)
-                cursor = conn.cursor()
-                cursor.execute("SELECT login, name, balance FROM clients WHERE pix_key = ?", (pix_key,))
-                alian_login, alian_name, alian_balance = cursor.fetchone()
-                new_balance = alian_balance + amount
-                cursor.execute(
-                    "UPDATE clients SET balance = ? WHERE login = ?",
-                    (new_balance, alian_login)
-                )
-                personal_new_balance = self.balance - amount
-                cursor.execute("UPDATE clients SET balance = ? WHERE login = ?", (personal_new_balance, self.login))
-                conn.commit()
-                self.balance -= amount
-                self._update_statement(
-                    operation="pix sent", value=amount, operator_name=self.name, receiver_name=alian_name, operation_time=str(operation_time)
-                )
-                self._update_alian_statement(
-                    operation="pix received", value=amount, operator_name=self.name, receiver_name=alian_name, operation_time=str(operation_time), login=alian_login
-                )
-                formated_pix_amount = "{:.2f}".format(float(amount))
-                return True, f"{CYAN}You send R${formated_pix_amount} to {alian_name} using PIX!{DEFAULT}"
-            except Error as e:
-                return False, f"{RED}Error saving pix: {e}{DEFAULT}"
-            finally:
-                conn.close()
+        elif not alert:
+            return False, f"Pix operation aborted!"
         else:
             return False, f"{RED}Pix key is not valid!{DEFAULT}"
+
 
     def _update_statement(
         self, operation: str, value: float, operator_name: str, receiver_name: str, operation_time: str
@@ -247,6 +265,7 @@ class Client:
         finally:
             conn.close()
 
+
     def _update_alian_statement(
         self, operation: str, value: float, operator_name, receiver_name: str, operation_time: str, login: str
     ) -> None:
@@ -278,6 +297,7 @@ class Client:
         finally:
             conn.close()
 
+
     def _print_statement(self, statement_path: str, balance: str) -> None:
         '''Print the user's statement in the terminal'''
         try:
@@ -306,6 +326,7 @@ class Client:
         except IOError as e:
             print(f"{RED}Error writing statement to file: {e}{DEFAULT}")
 
+
     def _is_to_print(self) -> tuple[bool, str]:
         '''Ask if the user's want's to download/print the statement'''
         while True:
@@ -322,6 +343,7 @@ class Client:
                 return True, name[0]
             except ValueError:
                 print(f"{RED}Please, enter a valid value!{DEFAULT}")
+
 
     def _handle_print_statement(self, name: str, date: str) -> str:
         '''Create a statement file in the folder 'Download' with the statement'''
@@ -342,6 +364,7 @@ class Client:
             except Exception as e:
                 return f"{RED}Error generating statement file: {e}{DEFAULT}"
         return f"{RED}Error: Could not generate statement file.{DEFAULT}"
+
 
     def display_statement(self) -> None:
         '''Print the user's statement in the terminal'''
@@ -378,6 +401,7 @@ class Client:
             ret = self._handle_print_statement(name=name, date=today)
             print(ret)
 
+
     def handle_login(self, input_pin: str, max_attempts: int = 3) -> tuple[bool, str]:
         '''Checks if the user's login credentials are correct'''
         try_nbr = 1
@@ -396,10 +420,12 @@ class Client:
             return True, ""
         return False, "Too many attempts to login!"
 
+
     def get_daily_withdrawal_cnt(self) -> int:
         '''Get what day the user is making the withdrawal'''
         current_date = datetime.now().strftime("%Y-%m-%d")
         return self.withdrawal_cnt.get(current_date, 0)
+
 
     def increment_withdrawal_cnt(self) -> None:
         '''Update how many withdrawals the user made in that day'''

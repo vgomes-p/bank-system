@@ -73,34 +73,7 @@ def run_system(bank: Bank, login: str) -> int:
 
 
 def main():
-    '''Init the system'''
     bank = Bank(agency="0001")
-    bank.registered_new_user(
-        name="Vinicius Eduardo",
-        cpf="12345678900",
-        birthday="01/08/2000",
-        street="none",
-        house_nbr="none",
-        neighborhood="none",
-        city="none",
-        state="NO",
-        login="vinny",
-        pin="access777",
-        pix_key="1234567890"
-    )
-    bank.registered_new_user(
-        name="Samuel Lacerda Osasco",
-        cpf="23456789011",
-        birthday="23/04/2005",
-        street="none",
-        house_nbr="none",
-        neighborhood="none",
-        city="none",
-        state="NO",
-        login="samuca",
-        pin="access777",
-        pix_key="2345678901"
-    )
     print(f"{GREEN}Welcome to the bank system{DEFAULT}")
     tm.sleep(0.5)
     sigfinish = 0
