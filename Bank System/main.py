@@ -3,8 +3,8 @@
 from bank import Bank
 from operations import handle_deposit, handle_withdrawal, handle_pix
 from libs.bank_system_utils import get_new_user_credentials
-from libs.color import RED, GREEN, YLOW, CYAN, DEFAULT
-from libs.utils import clear, press_enter
+from libs.utils import press_enter
+from libs.ft_pylib import clear, RED, GREEN, YLOW, CYAN, DEFAULT
 import time as tm
 import getpass
 

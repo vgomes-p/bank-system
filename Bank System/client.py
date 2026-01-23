@@ -1,9 +1,9 @@
-from libs.color import GREEN, RED, YLOW, PINK, CYAN, DEFAULT
 from libs.bank_system_utils import mk_file_name
 from datetime import datetime
-from libs.utils import clear
+from libs.ft_pylib import clear, decrypt, GREEN, RED, YLOW, PINK, CYAN, DEFAULT
 from sqlite3 import Error
 from pathlib import Path
+import json
 import getpass
 import platform
 import sqlite3
@@ -260,7 +260,7 @@ class Client:
                 (self.login, op_id, operation, value, op_name, re_name, operation_time),
             )
             conn.commit()
-        except Error:
+        except Error as e:
             print(f"{RED}Error saving personal statement: {e}{DEFAULT}")
         finally:
             conn.close()
@@ -401,13 +401,17 @@ class Client:
             ret = self._handle_print_statement(name=name, date=today)
             print(ret)
 
+    def _str_to_dict(self, text: str) -> dict:
+        return json.loads(text)
 
     def handle_login(self, input_pin: str, max_attempts: int = 3) -> tuple[bool, str]:
         '''Checks if the user's login credentials are correct'''
         try_nbr = 1
         check_pin = input_pin
+        get_pin = self._str_to_dict(self.pin)
+        pin = decrypt(get_pin)
         while try_nbr < max_attempts:
-            if check_pin == self.pin:
+            if check_pin == pin:
                 return True, ""
             clear(1, 0)
             if try_nbr == max_attempts - 1:
@@ -416,7 +420,7 @@ class Client:
                 print(f"{RED}Wrong password, please, try again!{DEFAULT}")
             check_pin = getpass.getpass("Enter your password: ")
             try_nbr += 1
-        if check_pin == self.pin:
+        if check_pin == pin:
             return True, ""
         return False, "Too many attempts to login!"
 

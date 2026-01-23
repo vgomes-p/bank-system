@@ -1,4 +1,4 @@
-from libs.color import RED, DEFAULT
+from libs.ft_pylib import RED, DEFAULT
 
 
 def mk_login(name: str, cpf: str, state: str) -> str:

@@ -1,9 +1,10 @@
 import random
 import string
 from client import Client
-from libs.color import RED, YLOW, DEFAULT
+from libs.ft_pylib import RED, YLOW, DEFAULT, encrypt
 import sqlite3
 from sqlite3 import Error
+import json
 
 
 class Bank:
@@ -180,6 +181,7 @@ class Bank:
             conn.close()
         if pin == "no_pin":
             pin = self._mk_pin()
+            encrypted_pin = encrypt(pin, "advanced")
         if pix_key == "no_pix_key":
             pix_key = self._mk_pix_key()
         client = Client(
@@ -187,7 +189,7 @@ class Bank:
             cpf=cpf,
             birthday=birthday,
             account=next_account,
-            pin=pin,
+            pin=encrypted_pin,
             pix_key=pix_key,
             street=street,
             house_nbr=house_nbr,
@@ -212,7 +214,7 @@ class Bank:
                     cpf,
                     birthday,
                     next_account,
-                    pin,
+                    json.dumps(encrypted_pin),
                     pix_key,
                     0.0,
                     street,

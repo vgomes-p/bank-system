@@ -1,8 +1,6 @@
-from curses.ascii import isalnum, isalpha
 from client import Client
-from libs.color import RED, GREEN, PINK, CYAN, YLOW, DEFAULT
-from libs.utils import clear, is_valid_number, is_negative_number, there_is_punct, there_is_alpha
-
+from libs.ft_pylib import clear, is_valid_number, is_negative_number, there_is_punct, there_is_alpha
+from libs.ft_pylib.colors import RED, PINK, CYAN, YLOW, DEFAULT
 
 def handle_int_input(message: str=""):
     while True:
